@@ -1,0 +1,8 @@
+policy,sessions,avg_user_reward,avg_net_reward,avg_training_objective,avg_session_length,avg_genre_diversity,tool_rate,tool_changed_item_rate,beneficial_tool_rate,successful_tool_rate,avg_expected_gain_when_called
+always_baseline,300,2.681333,2.681333,2.681333,7.42,1.003333,0.0,0.0,0.0,0.0,0.0
+always_tool,300,17.946667,15.946667,16.8165,20.0,2.496667,1.0,0.872,0.872,0.869833,0.215684
+heuristic_gain_gate,300,17.946667,16.202667,17.0725,20.0,2.496667,0.872,1.0,1.0,0.997515,0.247344
+learned_group_relative_argmax,300,17.946667,15.946667,16.8165,20.0,2.496667,1.0,0.872,0.872,0.869833,0.215684
+learned_group_relative_sample,300,16.306667,14.908,15.5305,19.966667,2.443333,0.700501,0.89204,0.89204,0.890133,0.27898
+learned_no_bonus_argmax,300,17.946667,15.946667,16.8165,20.0,2.496667,1.0,0.872,0.872,0.869833,0.215684
+learned_no_bonus_sample,300,16.296667,14.901,15.522333,19.966667,2.443333,0.698998,0.892286,0.892286,0.890375,0.279267

@@ -1,0 +1,136 @@
+{"kind":"deck","id":"pr/69wxx9","name":"Deck"}
+{"kind":"layout","layoutId":"15ceaba1-f973-4b0b-be30-4100da09b08e","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"8c84da33-e023-4a4e-a5e4-7f110b149fc4","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/vhuue5","slide":1,"title":"PRODUCTION-ORIENTED ML SYSTEM","textShapes":5}
+{"kind":"shape","id":"sh/4vetkbql","slide":1,"name":"title-accent","bbox":[0,0,18,720]}
+{"kind":"textbox","id":"sh/3u5cbqp0","slide":1,"name":"eyebrow","text":"PRODUCTION-ORIENTED ML SYSTEM","textPreview":"PRODUCTION-ORIENTED ML SYSTEM","textChars":29,"textLines":1,"bbox":[60,62,700,34]}
+{"kind":"textbox","id":"sh/2twbil8f","slide":1,"name":"deck-title","text":"推荐系统：从召回排序\n到真实反馈决策","textPreview":"推荐系统：从召回排序 | 到真实反馈决策","textChars":18,"textLines":2,"bbox":[60,176,940,220]}
+{"kind":"textbox","id":"sh/hsnu9g7u","slide":1,"name":"deck-subtitle","text":"双塔 + Faiss · DeepFM · SASRec / RL · 可观测服务 · OPE","textPreview":"双塔 + Faiss · DeepFM · SASRec / RL · 可观测服务 · OPE","textChars":47,"textLines":1,"bbox":[64,444,980,58]}
+{"kind":"textbox","id":"sh/grutgbq9","slide":1,"name":"author","text":"Victorica123","textPreview":"Victorica123","textChars":12,"textLines":1,"bbox":[64,610,380,36]}
+{"kind":"textbox","id":"sh/fqls76po","slide":1,"name":"deck-purpose","text":"面试项目答辩","textPreview":"面试项目答辩","textChars":6,"textLines":1,"bbox":[920,612,292,32]}
+{"kind":"notes","id":"nt/vhuue5","slide":1,"text":"开场只讲一句：这是一个围绕同一推荐业务问题，从离线模型做到生产服务、再做到反馈决策的完整闭环。\n\n[Sources]\n- D:\\machine  learning\\recsys-learning\\README.md\n- D:\\machine  learning\\recsys-learning\\REPORT.md"}
+{"kind":"slide","id":"sl/97f3rk","slide":2,"title":"一个业务问题，拆成四个可验证闭环","textShapes":16}
+{"kind":"textbox","id":"sh/qtkn65oz","slide":2,"name":"slide-2-title","text":"一个业务问题，拆成四个可验证闭环","textPreview":"一个业务问题，拆成四个可验证闭环","textChars":16,"textLines":1,"bbox":[52,34,1130,72]}
+{"kind":"textbox","id":"sh/dwbmhk7a","slide":2,"name":"slide-2-number","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1182,36,46,32]}
+{"kind":"shape","id":"sh/cv258f65","slide":2,"name":"slide-2-accent","bbox":[52,111,86,5]}
+{"kind":"shape","id":"sh/3694bap8","slide":2,"name":"flow-arrow-1","bbox":[304,304,46,44]}
+{"kind":"shape","id":"sh/250n25on","slide":2,"name":"flow-arrow-2","bbox":[600,304,46,44]}
+{"kind":"shape","id":"sh/p8bmd07e","slide":2,"name":"flow-arrow-3","bbox":[896,304,46,44]}
+{"kind":"shape","id":"sh/47i54f6t","slide":2,"name":"stage-1","bbox":[58,202,238,280]}
+{"kind":"textbox","id":"sh/n2donups","slide":2,"name":"stage-index-1","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[82,226,72,34]}
+{"kind":"textbox","id":"sh/m14nepo7","slide":2,"name":"stage-title-1","text":"召回","textPreview":"召回","textChars":2,"textLines":1,"bbox":[82,278,190,56]}
+{"kind":"textbox","id":"sh/kbexsjud","slide":2,"name":"stage-body-1","text":"双塔 + Faiss\n3,706 → 50","textPreview":"双塔 + Faiss | 3,706 → 50","textChars":21,"textLines":2,"bbox":[82,364,190,78]}
+{"kind":"shape","id":"sh/5cny1oby","slide":2,"name":"stage-2","bbox":[354,202,238,280]}
+{"kind":"textbox","id":"sh/i9wfqtcn","slide":2,"name":"stage-index-2","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[378,226,72,34]}
+{"kind":"textbox","id":"sh/ja5gzet8","slide":2,"name":"stage-title-2","text":"排序","textPreview":"排序","textChars":2,"textLines":1,"bbox":[378,278,190,56]}
+{"kind":"textbox","id":"sh/w7exojuh","slide":2,"name":"stage-body-2","text":"DeepFM\n50 → Top-10","textPreview":"DeepFM | 50 → Top-10","textChars":18,"textLines":2,"bbox":[378,364,190,78]}
+{"kind":"shape","id":"sh/x8nyxob2","slide":2,"name":"stage-3","bbox":[650,202,238,280]}
+{"kind":"textbox","id":"sh/alcfm9cb","slide":2,"name":"stage-index-3","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[674,226,72,34]}
+{"kind":"textbox","id":"sh/vmlgvetw","slide":2,"name":"stage-title-3","text":"服务","textPreview":"服务","textChars":2,"textLines":1,"bbox":[674,278,190,56]}
+{"kind":"textbox","id":"sh/8juxkzul","slide":2,"name":"stage-body-3","text":"API / Demo\n限流与观测","textPreview":"API / Demo | 限流与观测","textChars":16,"textLines":2,"bbox":[674,364,190,78]}
+{"kind":"shape","id":"sh/9k3yt4vq","slide":2,"name":"stage-4","bbox":[946,202,238,280]}
+{"kind":"textbox","id":"sh/p0vex0nu","slide":2,"name":"stage-index-4","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[970,226,72,34]}
+{"kind":"textbox","id":"sh/ofmdovm9","slide":2,"name":"stage-title-4","text":"决策","textPreview":"决策","textChars":2,"textLines":1,"bbox":[970,278,190,56]}
+{"kind":"textbox","id":"sh/nedwvq5o","slide":2,"name":"stage-body-4","text":"曝光 + 反馈\nIPS / ESS","textPreview":"曝光 + 反馈 | IPS / ESS","textChars":17,"textLines":2,"bbox":[970,364,190,78]}
+{"kind":"textbox","id":"sh/2d4vml43","slide":2,"name":"architecture-takeaway","text":"主线不是“模型清单”，而是每一层都有指标、故障诊断和决策边界。","textPreview":"主线不是“模型清单”，而是每一层都有指标、故障诊断和决策边界。","textChars":31,"textLines":1,"bbox":[58,548,1120,56]}
+{"kind":"textbox","id":"sh/1cvetgni","slide":2,"name":"footer","text":"Victorica123 · Recommender System","textPreview":"Victorica123 · Recommender System","textChars":33,"textLines":1,"bbox":[52,674,1160,20]}
+{"kind":"notes","id":"nt/97f3rk","slide":2,"text":"按从左到右讲。强调每层都可独立验证：召回看 Recall，排序看 AUC，服务看吞吐/p99，决策看支持度与不确定性。\n\n[Sources]\n- D:\\machine  learning\\recsys-learning\\src\\serving.py\n- D:\\machine  learning\\recsys-learning\\src\\feedback.py\n- D:\\machine  learning\\recsys-learning\\docs\\FEEDBACK_LOOP.md"}
+{"kind":"slide","id":"sl/y01xvl","slide":3,"title":"真正的提升来自评估纠偏，不是盲目换模型","textShapes":8}
+{"kind":"textbox","id":"sh/0ry98bmt","slide":3,"name":"slide-3-title","text":"真正的提升来自评估纠偏，不是盲目换模型","textPreview":"真正的提升来自评估纠偏，不是盲目换模型","textChars":19,"textLines":1,"bbox":[52,34,1130,72]}
+{"kind":"textbox","id":"sh/zqp8z6l8","slide":3,"name":"slide-3-number","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1182,36,46,32]}
+{"kind":"shape","id":"sh/ypg7614n","slide":3,"name":"slide-3-accent","bbox":[52,111,86,5]}
+{"kind":"textbox","id":"sh/cnyp4rmx","slide":3,"name":"recall-stat","text":"0.097","textPreview":"0.097","textChars":5,"textLines":1,"bbox":[785,176,390,110]}
+{"kind":"textbox","id":"sh/rmp8vmlc","slide":3,"name":"recall-label","text":"Recall@10","textPreview":"Recall@10","textChars":9,"textLines":1,"bbox":[791,277,340,38]}
+{"kind":"textbox","id":"sh/qlw72h4r","slide":3,"name":"uplift-stat","text":"+56%","textPreview":"+56%","textChars":4,"textLines":1,"bbox":[787,346,360,72]}
+{"kind":"textbox","id":"sh/pknqtc36","slide":3,"name":"uplift-label","text":"相对 MF 基线 0.062","textPreview":"相对 MF 基线 0.062","textChars":14,"textLines":1,"bbox":[791,419,360,34]}
+{"kind":"textbox","id":"sh/4jep0rml","slide":3,"name":"diagnosis","text":"统一 leave-one-out / 负采样口径\n按采样先验做 logit correction","textPreview":"统一 leave-one-out / 负采样口径 | 按采样先验做 logit correction","textChars":48,"textLines":2,"bbox":[789,496,410,92]}
+{"kind":"textbox","id":"sh/i1kbedcj","slide":3,"name":"footer","text":"Victorica123 · Recommender System","textPreview":"Victorica123 · Recommender System","textChars":33,"textLines":1,"bbox":[52,674,1160,20]}
+{"kind":"image","id":"im/8batknil","slide":3,"name":"","alt":"Matrix factorization and two-tower Recall comparison","bbox":[46,150,690,460]}
+{"kind":"notes","id":"nt/y01xvl","slide":3,"text":"这是最值得深挖的失败故事。先说第一版 loss 降但 Recall 不升，再解释评估协议和负采样先验，最后落到 logit correction。\n\n[Sources]\n- D:\\machine  learning\\recsys-learning\\figures\\08-双塔召回对比.png\n- D:\\machine  learning\\recsys-learning\\REPORT.md\n- D:\\machine  learning\\recsys-learning\\src\\train_two_tower.py"}
+{"kind":"slide","id":"sl/9gk5r1","slide":4,"title":"两阶段架构把“快”和“准”分开优化","textShapes":10}
+{"kind":"textbox","id":"sh/5wfuhw36","slide":4,"name":"slide-4-title","text":"两阶段架构把“快”和“准”分开优化","textPreview":"两阶段架构把“快”和“准”分开优化","textChars":17,"textLines":1,"bbox":[52,34,1130,72]}
+{"kind":"textbox","id":"sh/itov61kf","slide":4,"name":"slide-4-number","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1182,36,46,32]}
+{"kind":"shape","id":"sh/3uxcfml0","slide":4,"name":"slide-4-accent","bbox":[52,111,86,5]}
+{"kind":"shape","id":"sh/sjqdcb2h","slide":4,"name":"two-stage-arrow","bbox":[578,285,112,72]}
+{"kind":"shape","id":"sh/dkzulg32","slide":4,"name":"retrieval-block","bbox":[90,188,430,320]}
+{"kind":"shape","id":"sh/qhova1kr","slide":4,"name":"ranking-block","bbox":[744,188,430,320]}
+{"kind":"textbox","id":"sh/rihcj6lw","slide":4,"name":"retrieval-title","text":"双塔召回","textPreview":"双塔召回","textChars":4,"textLines":1,"bbox":[126,226,350,58]}
+{"kind":"textbox","id":"sh/8nmt07md","slide":4,"name":"retrieval-body","text":"用户塔 / 物品塔\n32 维向量\nFaiss 内积检索","textPreview":"用户塔 / 物品塔 | 32 维向量 | Faiss 内积检索","textChars":27,"textLines":3,"bbox":[126,314,340,128]}
+{"kind":"textbox","id":"sh/tovu9c3y","slide":4,"name":"ranking-title","text":"DeepFM 精排","textPreview":"DeepFM 精排","textChars":9,"textLines":1,"bbox":[780,226,350,58]}
+{"kind":"textbox","id":"sh/lwjy9kn6","slide":4,"name":"ranking-body","text":"用户 + 物品 + 交叉特征\n候选集逐项打分\n测试 AUC 0.804","textPreview":"用户 + 物品 + 交叉特征 | 候选集逐项打分 | 测试 AUC 0.804","textChars":35,"textLines":3,"bbox":[780,314,350,128]}
+{"kind":"textbox","id":"sh/kvah0f6l","slide":4,"name":"all-items","text":"全库 3,706","textPreview":"全库 3,706","textChars":8,"textLines":1,"bbox":[103,544,210,38]}
+{"kind":"textbox","id":"sh/zu1g7a5g","slide":4,"name":"candidates","text":"50 候选","textPreview":"50 候选","textChars":5,"textLines":1,"bbox":[533,544,210,38]}
+{"kind":"textbox","id":"sh/ytszy5ov","slide":4,"name":"topk","text":"Top-10","textPreview":"Top-10","textChars":6,"textLines":1,"bbox":[963,544,210,38]}
+{"kind":"textbox","id":"sh/903idkni","slide":4,"name":"footer","text":"Victorica123 · Recommender System","textPreview":"Victorica123 · Recommender System","textChars":33,"textLines":1,"bbox":[52,674,1160,20]}
+{"kind":"notes","id":"nt/9gk5r1","slide":4,"text":"讲清楚为什么不让 DeepFM 给全库打分：两阶段把全库检索成本和复杂交叉特征成本解耦。\n\n[Sources]\n- D:\\machine  learning\\recsys-learning\\src\\serving.py\n- D:\\machine  learning\\recsys-learning\\experiments\\deepfm_log.csv\n- D:\\machine  learning\\recsys-learning\\REPORT.md"}
+{"kind":"slide","id":"sl/tv0pcy","slide":5,"title":"吞吐提升不是免费的：p99 与内存必须一起看","textShapes":8}
+{"kind":"textbox","id":"sh/gjaxgf65","slide":5,"name":"slide-5-title","text":"吞吐提升不是免费的：p99 与内存必须一起看","textPreview":"吞吐提升不是免费的：p99 与内存必须一起看","textChars":22,"textLines":1,"bbox":[52,34,1130,72]}
+{"kind":"textbox","id":"sh/fi1g7a5k","slide":5,"name":"slide-5-number","text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1182,36,46,32]}
+{"kind":"shape","id":"sh/ehsfe5oz","slide":5,"name":"slide-5-accent","bbox":[52,111,86,5]}
+{"kind":"textbox","id":"sh/svaxcv6t","slide":5,"name":"prod-config","text":"2 workers","textPreview":"2 workers","textChars":9,"textLines":1,"bbox":[848,165,330,48]}
+{"kind":"textbox","id":"sh/ru1g3q58","slide":5,"name":"rps-stat","text":"270 RPS","textPreview":"270 RPS","textChars":7,"textLines":1,"bbox":[843,224,360,80]}
+{"kind":"textbox","id":"sh/6tsfa5o3","slide":5,"name":"p99-stat","text":"HTTP 200 p99 约 72 ms","textPreview":"HTTP 200 p99 约 72 ms","textChars":20,"textLines":1,"bbox":[848,310,350,42]}
+{"kind":"textbox","id":"sh/dcnyh4ni","slide":5,"name":"rss-stat","text":"≈ 1.78 GiB RSS","textPreview":"≈ 1.78 GiB RSS","textChars":14,"textLines":1,"bbox":[848,373,350,42]}
+{"kind":"textbox","id":"sh/cruhoz6d","slide":5,"name":"prod-takeaway","text":"准入控制让系统在饱和时返回 429，\n保护已接收请求，而不是继续排队。","textPreview":"准入控制让系统在饱和时返回 429， | 保护已接收请求，而不是继续排队。","textChars":35,"textLines":2,"bbox":[848,468,352,96]}
+{"kind":"textbox","id":"sh/ypw76hsn","slide":5,"name":"footer","text":"Victorica123 · Recommender System","textPreview":"Victorica123 · Recommender System","textChars":33,"textLines":1,"bbox":[52,674,1160,20]}
+{"kind":"image","id":"im/wna1gjqp","slide":5,"name":"","alt":"Worker scaling throughput, latency, and memory measurements","bbox":[38,138,760,492]}
+{"kind":"notes","id":"nt/tv0pcy","slide":5,"text":"强调数字是同一台 12 逻辑核 Windows 主机上的本地实测，不外推为云端 SLO。结论是用成本换吞吐和尾延迟。\n\n[Sources]\n- D:\\machine  learning\\recsys-learning\\experiments\\serve_scaling_verified-20260726.json\n- D:\\machine  learning\\recsys-learning\\figures\\serve_worker_scaling_verified-20260726.png\n- D:\\machine  learning\\recsys-learning\\docs\\PRODUCTION_SERVING.md"}
+{"kind":"slide","id":"sl/053ttx","slide":6,"title":"SOTA 先验不匹配时，越“保守”反而越差","textShapes":8}
+{"kind":"textbox","id":"sh/m1kz6lsr","slide":6,"name":"slide-6-title","text":"SOTA 先验不匹配时，越“保守”反而越差","textPreview":"SOTA 先验不匹配时，越“保守”反而越差","textChars":21,"textLines":1,"bbox":[52,34,1130,72]}
+{"kind":"textbox","id":"sh/94bihgb2","slide":6,"name":"slide-6-number","text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1182,36,46,32]}
+{"kind":"shape","id":"sh/832h8bah","slide":6,"name":"slide-6-accent","bbox":[52,111,86,5]}
+{"kind":"textbox","id":"sh/yx0z21sf","slide":6,"name":"cql-observation-label","text":"观察","textPreview":"观察","textChars":2,"textLines":1,"bbox":[794,168,360,40]}
+{"kind":"textbox","id":"sh/l0bidgb6","slide":6,"name":"cql-observation","text":"α 越大，回报单调下降","textPreview":"α 越大，回报单调下降","textChars":11,"textLines":1,"bbox":[790,218,410,62]}
+{"kind":"textbox","id":"sh/0z2h4bal","slide":6,"name":"cql-root-label","text":"根因","textPreview":"根因","textChars":2,"textLines":1,"bbox":[794,330,360,40]}
+{"kind":"textbox","id":"sh/jud0na94","slide":6,"name":"cql-root","text":"回报有界 + 动作全合法\n日志覆盖较好\n外推误差风险并不突出","textPreview":"回报有界 + 动作全合法 | 日志覆盖较好 | 外推误差风险并不突出","textChars":30,"textLines":3,"bbox":[790,380,410,116]}
+{"kind":"textbox","id":"sh/it4je5sz","slide":6,"name":"cql-decision","text":"先诊断数据，再选择保守性。","textPreview":"先诊断数据，再选择保守性。","textChars":13,"textLines":1,"bbox":[792,545,420,48]}
+{"kind":"textbox","id":"sh/cjq14bu1","slide":6,"name":"footer","text":"Victorica123 · Recommender System","textPreview":"Victorica123 · Recommender System","textChars":33,"textLines":1,"bbox":[52,674,1160,20]}
+{"kind":"image","id":"im/mx8fu98b","slide":6,"name":"","alt":"CQL conservatism coefficient trade-off","bbox":[44,144,690,466]}
+{"kind":"notes","id":"nt/053ttx","slide":6,"text":"不要说 CQL 无效。准确说法是：CQL 的保守假设与当前仿真器的数据覆盖和回报结构不匹配。\n\n[Sources]\n- D:\\machine  learning\\recsys-learning\\figures\\14-CQL保守系数权衡.png\n- D:\\machine  learning\\recsys-learning\\notes\\12-推荐系统后训练-离线RL与SFT.md\n- D:\\machine  learning\\recsys-learning\\research_v2\\phase2_offline_rl\\"}
+{"kind":"slide","id":"sl/s03gn1","slide":7,"title":"反馈闭环的价值，是让一个“好点子”可以被否决","textShapes":12}
+{"kind":"textbox","id":"sh/2xo7mdc7","slide":7,"name":"slide-7-title","text":"反馈闭环的价值，是让一个“好点子”可以被否决","textPreview":"反馈闭环的价值，是让一个“好点子”可以被否决","textChars":22,"textLines":1,"bbox":[52,34,1130,72]}
+{"kind":"textbox","id":"sh/90f6x8bi","slide":7,"name":"slide-7-number","text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1182,36,46,32]}
+{"kind":"shape","id":"sh/oz6ponux","slide":7,"name":"slide-7-accent","bbox":[52,111,86,5]}
+{"kind":"shape","id":"sh/b2hozito","slide":7,"name":"feedback-arrow-1","bbox":[276,310,58,42]}
+{"kind":"shape","id":"sh/a1o7qdc3","slide":7,"name":"feedback-arrow-2","bbox":[546,310,58,42]}
+{"kind":"shape","id":"sh/x4z61sbu","slide":7,"name":"feedback-arrow-3","bbox":[816,310,58,42]}
+{"kind":"shape","id":"sh/w3qpsnu9","slide":7,"name":"feedback-stage-1","bbox":[80,224,198,238]}
+{"kind":"textbox","id":"sh/j6ho32tk","slide":7,"name":"feedback-title-1","text":"候选池","textPreview":"候选池","textChars":3,"textLines":1,"bbox":[102,260,156,48]}
+{"kind":"textbox","id":"sh/y587uxcz","slide":7,"name":"feedback-body-1","text":"记录完整候选\n与 propensity","textPreview":"记录完整候选 | 与 propensity","textChars":19,"textLines":2,"bbox":[102,342,158,86]}
+{"kind":"shape","id":"sh/c3yd87i1","slide":7,"name":"feedback-stage-2","bbox":[350,224,198,238]}
+{"kind":"textbox","id":"sh/d47uhcjm","slide":7,"name":"feedback-title-2","text":"曝光","textPreview":"曝光","textChars":2,"textLines":1,"bbox":[372,260,156,48]}
+{"kind":"textbox","id":"sh/q1gv6x0v","slide":7,"name":"feedback-body-2","text":"只把实际展示\n计入观察","textPreview":"只把实际展示 | 计入观察","textChars":11,"textLines":2,"bbox":[372,342,158,86]}
+{"kind":"shape","id":"sh/b2pcf21g","slide":7,"name":"feedback-stage-3","bbox":[620,224,198,238]}
+{"kind":"textbox","id":"sh/07idc7ix","slide":7,"name":"feedback-title-3","text":"反馈","textPreview":"反馈","textChars":2,"textLines":1,"bbox":[642,260,156,48]}
+{"kind":"textbox","id":"sh/l8relcji","slide":7,"name":"feedback-body-3","text":"click / skip\n幂等事件","textPreview":"click / skip | 幂等事件","textChars":17,"textLines":2,"bbox":[642,342,158,86]}
+{"kind":"shape","id":"sh/y50vax07","slide":7,"name":"feedback-stage-4","bbox":[890,224,198,238]}
+{"kind":"textbox","id":"sh/z69wj21s","slide":7,"name":"feedback-title-4","text":"评估","textPreview":"评估","textChars":2,"textLines":1,"bbox":[912,260,156,48]}
+{"kind":"textbox","id":"sh/8bidgri9","slide":7,"name":"feedback-body-4","text":"IPS / SNIPS\nESS + bootstrap","textPreview":"IPS / SNIPS | ESS + bootstrap","textChars":27,"textLines":2,"bbox":[912,342,158,86]}
+{"kind":"textbox","id":"sh/9wbepwju","slide":7,"name":"feedback-decision","text":"没有非零支持度，就不输出“新策略胜出”；没有多人证据，就不冒充全局结论。","textPreview":"没有非零支持度，就不输出“新策略胜出”；没有多人证据，就不冒充全局结论。","textChars":36,"textLines":1,"bbox":[82,526,1080,66]}
+{"kind":"textbox","id":"sh/hs7u9cby","slide":7,"name":"footer","text":"Victorica123 · Recommender System","textPreview":"Victorica123 · Recommender System","textChars":33,"textLines":1,"bbox":[52,674,1160,20]}
+{"kind":"notes","id":"nt/s03gn1","slide":7,"text":"把 propensity、支持度和 ESS 讲成决策安全机制，而不是统计名词清单。\n\n[Sources]\n- D:\\machine  learning\\recsys-learning\\src\\feedback.py\n- D:\\machine  learning\\recsys-learning\\docs\\FEEDBACK_LOOP.md\n- D:\\machine  learning\\recsys-learning\\feedback_app.py"}
+{"kind":"slide","id":"sl/m4nf24","slide":8,"title":"个人有提升信号，但群体证据否决了全量上线","textShapes":8}
+{"kind":"textbox","id":"sh/3ipwved0","slide":8,"name":"slide-8-title","text":"个人有提升信号，但群体证据否决了全量上线","textPreview":"个人有提升信号，但群体证据否决了全量上线","textChars":20,"textLines":1,"bbox":[52,34,1130,72]}
+{"kind":"textbox","id":"sh/ojyx4jel","slide":8,"name":"slide-8-number","text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1182,36,46,32]}
+{"kind":"shape","id":"sh/pk7yxov6","slide":8,"name":"slide-8-accent","bbox":[52,111,86,5]}
+{"kind":"textbox","id":"sh/bmpgzydc","slide":8,"name":"personal-signal","text":"+11.1%","textPreview":"+11.1%","textChars":6,"textLines":1,"bbox":[810,162,360,76]}
+{"kind":"textbox","id":"sh/cnyx83ex","slide":8,"name":"personal-label","text":"个人 20 批 IPS 方向","textPreview":"个人 20 批 IPS 方向","textChars":14,"textLines":1,"bbox":[814,240,350,38]}
+{"kind":"textbox","id":"sh/xo7y1ov2","slide":8,"name":"external-negative","text":"-0.332","textPreview":"-0.332","textChars":6,"textLines":1,"bbox":[810,332,360,76]}
+{"kind":"textbox","id":"sh/6pcfupwn","slide":8,"name":"external-label","text":"高多样性“感到个性化”\nHolm p = 0.0144","textPreview":"高多样性“感到个性化” | Holm p = 0.0144","textChars":27,"textLines":2,"bbox":[814,410,350,72]}
+{"kind":"textbox","id":"sh/rq5wnuds","slide":8,"name":"rollout-decision","text":"决策：保留基线\n低权重多样性仅作个性化候选","textPreview":"决策：保留基线 | 低权重多样性仅作个性化候选","textChars":21,"textLines":2,"bbox":[812,514,400,98]}
+{"kind":"textbox","id":"sh/vyp0z2hc","slide":8,"name":"footer","text":"Victorica123 · Recommender System","textPreview":"Victorica123 · Recommender System","textChars":33,"textLines":1,"bbox":[52,674,1160,20]}
+{"kind":"chart","id":"ch/i907ml4n","slide":8,"name":"","chartType":"bar","bbox":[48,150,700,450]}
+{"kind":"notes","id":"nt/m4nf24","slide":8,"text":"明确两个处理并不相同：外部问卷是可迁移性检查，不是当前 weight=0.15 的直接 A/B。最重要的是上线决策。\n\n[Sources]\n- https://grouplens.org/datasets/personality-2018/\n- D:\\machine  learning\\recsys-learning\\experiments\\external_survey_personality-2018-diversity-v1-20260727.json\n- D:\\machine  learning\\recsys-learning\\runtime\\feedback\\events.sqlite3"}
+{"kind":"slide","id":"sl/2dpdd5","slide":9,"title":"WHY THIS PROJECT","textShapes":10}
+{"kind":"textbox","id":"sh/h4vehszi","slide":9,"name":"close-eyebrow","text":"WHY THIS PROJECT","textPreview":"WHY THIS PROJECT","textChars":16,"textLines":1,"bbox":[54,52,430,30]}
+{"kind":"textbox","id":"sh/uhkvmxg7","slide":9,"name":"close-title","text":"值得深挖的不是模型数量，\n而是三种工程判断","textPreview":"值得深挖的不是模型数量， | 而是三种工程判断","textChars":21,"textLines":2,"bbox":[54,138,970,150]}
+{"kind":"textbox","id":"sh/f2dwfihc","slide":9,"name":"close-1-index","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[58,360,60,42]}
+{"kind":"textbox","id":"sh/47mxs7y9","slide":9,"name":"close-1","text":"指标异常时先审计协议与采样","textPreview":"指标异常时先审计协议与采样","textChars":13,"textLines":1,"bbox":[126,354,520,58]}
+{"kind":"textbox","id":"sh/p8velczu","slide":9,"name":"close-2-index","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[58,448,60,42]}
+{"kind":"textbox","id":"sh/254vqxg3","slide":9,"name":"close-2","text":"扩容时同时看吞吐、p99 与成本","textPreview":"扩容时同时看吞吐、p99 与成本","textChars":16,"textLines":1,"bbox":[126,442,540,58]}
+{"kind":"textbox","id":"sh/36dwj2ho","slide":9,"name":"close-3-index","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[58,536,60,42]}
+{"kind":"textbox","id":"sh/cb6xw7y5","slide":9,"name":"close-3","text":"证据不足时敢于不全量上线","textPreview":"证据不足时敢于不全量上线","textChars":12,"textLines":1,"bbox":[126,530,520,58]}
+{"kind":"shape","id":"sh/dcfepczq","slide":9,"name":"close-callout-box","bbox":[760,338,430,246]}
+{"kind":"textbox","id":"sh/9sjadsvy","slide":9,"name":"close-callout","text":"可运行\n可解释\n可被质疑","textPreview":"可运行 | 可解释 | 可被质疑","textChars":12,"textLines":3,"bbox":[800,374,340,172]}
+{"kind":"textbox","id":"sh/orat4ned","slide":9,"name":"footer","text":"项目材料：README · REPORT · Interview Playbook · Evidence Index","textPreview":"项目材料：README · REPORT · Interview Playbook · Evidence Index","textChars":58,"textLines":1,"bbox":[52,674,1160,20]}
+{"kind":"notes","id":"nt/2dpdd5","slide":9,"text":"收尾回到工程判断。邀请面试官选择一个方向深挖：召回纠偏、生产容量，或反馈 OPE。\n\n[Sources]\n- D:\\machine  learning\\recsys-learning\\docs\\INTERVIEW_PLAYBOOK.md\n- D:\\machine  learning\\recsys-learning\\docs\\PROJECT_EVIDENCE.md"}

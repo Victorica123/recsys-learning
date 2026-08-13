@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 860" role="img" aria-labelledby="title desc">
+  <title id="title">从双塔到生成式推荐：三种系统范式</title>
+  <desc id="desc">并列比较传统召回精排、TIGER语义ID生成式检索和OneRec整页生成与偏好对齐，并展示语义ID的产生过程和各自边界。</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" class="ah"/></marker>
+    <style>
+      .bg{fill:#f8fafc}.col{fill:#fff;stroke:#cbd5e1;stroke-width:1.5}.classic{fill:#e0f2fe;stroke:#0284c7;stroke-width:1.5}.tiger{fill:#f3e8ff;stroke:#9333ea;stroke-width:1.5}.one{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.warn{fill:#fff7ed;stroke:#ea580c;stroke-width:1.5}.neutral{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.2}
+      .t{font-family:"Microsoft YaHei","Noto Sans SC",Arial,sans-serif;fill:#0f172a;font-size:15px}.h{font-size:28px;font-weight:600}.ch{font-size:20px;font-weight:600}.nh{font-size:15px;font-weight:600}.s{font-size:13px;fill:#475569}.xs{font-size:12px;fill:#64748b}.tag{font-size:12px;font-weight:600}.arrow{fill:none;stroke:#475569;stroke-width:1.8;marker-end:url(#a)}.dash{fill:none;stroke:#9333ea;stroke-width:1.8;stroke-dasharray:6 5;marker-end:url(#a)}.loop{fill:none;stroke:#16a34a;stroke-width:2.1;marker-end:url(#a)}.ah{fill:#475569}.line{stroke:#cbd5e1;stroke-width:1}
+      @media(prefers-color-scheme:dark){.bg{fill:#0f172a}.col{fill:#111827;stroke:#475569}.classic{fill:#0c4a6e;stroke:#38bdf8}.tiger{fill:#581c87;stroke:#c084fc}.one{fill:#14532d;stroke:#4ade80}.warn{fill:#7c2d12;stroke:#fb923c}.neutral{fill:#1e293b;stroke:#64748b}.t{fill:#f8fafc}.s{fill:#cbd5e1}.xs{fill:#94a3b8}.arrow{stroke:#cbd5e1}.ah{fill:#cbd5e1}.line{stroke:#475569}}
+    </style>
+  </defs>
+  <rect class="bg" width="1280" height="860"/>
+  <text class="t h" x="40" y="47">从“向量匹配”到“生成物品”：前沿不是把旧系统简单删掉</text>
+  <text class="t s" x="40" y="74">三列回答同一个问题：给定用户历史，怎样得到最终列表？差异在于索引在哪里、列表怎样产生、训练信号怎样对齐。</text>
+
+  <rect class="col" x="34" y="98" width="386" height="708" rx="18"/>
+  <rect class="classic" x="54" y="118" width="346" height="58" rx="12"/>
+  <text class="t ch" x="227" y="145" text-anchor="middle">A. 经典级联：Retrieve → Rank</text>
+  <text class="t tag" x="227" y="164" text-anchor="middle">成熟工业基线 · 模块可独立扩缩容</text>
+  <rect class="neutral" x="78" y="204" width="126" height="64" rx="10"/>
+  <text class="t nh" x="141" y="231" text-anchor="middle">用户历史</text><text class="t s" x="141" y="251" text-anchor="middle">ID / 属性 / 序列</text>
+  <rect class="classic" x="250" y="204" width="126" height="64" rx="10"/>
+  <text class="t nh" x="313" y="231" text-anchor="middle">用户塔</text><text class="t s" x="313" y="251" text-anchor="middle">得到向量 u</text>
+  <path class="arrow" d="M204 236H244"/>
+  <rect class="neutral" x="78" y="304" width="126" height="64" rx="10"/>
+  <text class="t nh" x="141" y="331" text-anchor="middle">物品塔</text><text class="t s" x="141" y="351" text-anchor="middle">离线向量库 V</text>
+  <rect class="classic" x="250" y="304" width="126" height="64" rx="10"/>
+  <text class="t nh" x="313" y="331" text-anchor="middle">ANN / Faiss</text><text class="t s" x="313" y="351" text-anchor="middle">按 u·v 取候选</text>
+  <path class="arrow" d="M204 336H244"/>
+  <path class="arrow" d="M313 268V298"/>
+  <rect class="classic" x="78" y="404" width="298" height="72" rx="10"/>
+  <text class="t nh" x="227" y="431" text-anchor="middle">DeepFM / DIN 精排</text>
+  <text class="t s" x="227" y="454" text-anchor="middle">候选级丰富特征交叉：10²~10⁴ → Top-K</text>
+  <path class="arrow" d="M313 368V398"/>
+  <rect class="classic" x="78" y="512" width="298" height="68" rx="10"/>
+  <text class="t nh" x="227" y="539" text-anchor="middle">规则 / 多样性 / 探索重排</text>
+  <text class="t s" x="227" y="561" text-anchor="middle">每层目标不同，故障容易隔离</text>
+  <path class="arrow" d="M227 476V506"/>
+  <line class="line" x1="64" y1="612" x2="390" y2="612"/>
+  <text class="t nh" x="78" y="640">优势</text><text class="t s" x="126" y="640">延迟可控、索引可更新、模块可解释</text>
+  <text class="t nh" x="78" y="670">代价</text><text class="t s" x="126" y="670">多阶段目标不一致，规则与特征工程较多</text>
+  <rect class="warn" x="78" y="700" width="298" height="72" rx="10"/>
+  <text class="t nh" x="227" y="727" text-anchor="middle">别误解</text>
+  <text class="t s" x="227" y="749" text-anchor="middle">生成式模型出现后，级联仍是强基线与护栏</text>
+
+  <rect class="col" x="447" y="98" width="386" height="708" rx="18"/>
+  <rect class="tiger" x="467" y="118" width="346" height="58" rx="12"/>
+  <text class="t ch" x="640" y="145" text-anchor="middle">B. TIGER：生成式检索</text>
+  <text class="t tag" x="640" y="164" text-anchor="middle">把物品 ID 变成可生成的语义 token</text>
+  <text class="t xs" x="487" y="203">① 先造“有语义的身份证”</text>
+  <rect class="neutral" x="476" y="218" width="92" height="60" rx="10"/>
+  <text class="t nh" x="522" y="243" text-anchor="middle">标题/图片</text><text class="t xs" x="522" y="263" text-anchor="middle">内容特征</text>
+  <rect class="tiger" x="596" y="218" width="92" height="60" rx="10"/>
+  <text class="t nh" x="642" y="243" text-anchor="middle">编码器</text><text class="t xs" x="642" y="263" text-anchor="middle">连续向量</text>
+  <rect class="tiger" x="716" y="218" width="92" height="60" rx="10"/>
+  <text class="t nh" x="762" y="243" text-anchor="middle">RQ-VAE</text><text class="t xs" x="762" y="263" text-anchor="middle">逐级量化</text>
+  <path class="arrow" d="M568 248H590"/><path class="arrow" d="M688 248H710"/>
+  <rect class="tiger" x="522" y="304" width="236" height="64" rx="10"/>
+  <text class="t nh" x="640" y="331" text-anchor="middle">电影 678 → Semantic ID</text>
+  <text class="t s" x="640" y="353" text-anchor="middle">例如 (5, 25, 78)：共享前缀 ≈ 共享语义</text>
+  <path class="arrow" d="M762 278V294Q762 298 752 304"/>
+  <text class="t xs" x="487" y="403">② 再把推荐改写成“下一个 token 序列生成”</text>
+  <rect class="neutral" x="476" y="420" width="112" height="72" rx="10"/>
+  <text class="t nh" x="532" y="447" text-anchor="middle">历史语义 ID</text><text class="t xs" x="532" y="469" text-anchor="middle">(5,23,55)…</text>
+  <rect class="tiger" x="614" y="420" width="112" height="72" rx="10"/>
+  <text class="t nh" x="670" y="447" text-anchor="middle">Encoder-</text><text class="t nh" x="670" y="466" text-anchor="middle">Decoder</text>
+  <rect class="tiger" x="752" y="420" width="56" height="72" rx="10"/>
+  <text class="t nh" x="780" y="448" text-anchor="middle">Beam</text><text class="t xs" x="780" y="470" text-anchor="middle">Search</text>
+  <path class="arrow" d="M588 456H608"/><path class="arrow" d="M726 456H746"/>
+  <rect class="tiger" x="522" y="520" width="236" height="62" rx="10"/>
+  <text class="t nh" x="640" y="547" text-anchor="middle">生成下一物品 Semantic ID</text>
+  <text class="t s" x="640" y="568" text-anchor="middle">再映射回真实物品</text>
+  <path class="arrow" d="M780 492V508Q780 516 758 520"/>
+  <line class="line" x1="477" y1="612" x2="803" y2="612"/>
+  <text class="t nh" x="491" y="640">前沿价值</text><text class="t s" x="567" y="640">内容共享、长尾/冷启动、可控采样</text>
+  <text class="t nh" x="491" y="670">关键瓶颈</text><text class="t s" x="567" y="670">量化碰撞、码本利用、Beam 延迟、扩缩容</text>
+  <rect class="warn" x="491" y="700" width="298" height="72" rx="10"/>
+  <text class="t nh" x="640" y="727" text-anchor="middle">研究边界</text>
+  <text class="t s" x="640" y="749" text-anchor="middle">Semantic ID 不是“更高级 ID”，要做消融与规模验证</text>
+
+  <rect class="col" x="860" y="98" width="386" height="708" rx="18"/>
+  <rect class="one" x="880" y="118" width="346" height="58" rx="12"/>
+  <text class="t ch" x="1053" y="145" text-anchor="middle">C. OneRec：整页生成 + 对齐</text>
+  <text class="t tag" x="1053" y="164" text-anchor="middle">尝试统一召回、排序和列表目标</text>
+  <rect class="neutral" x="902" y="208" width="136" height="76" rx="10"/>
+  <text class="t nh" x="970" y="237" text-anchor="middle">用户历史与特征</text><text class="t s" x="970" y="260" text-anchor="middle">正反馈序列</text>
+  <rect class="one" x="1068" y="208" width="136" height="76" rx="10"/>
+  <text class="t nh" x="1136" y="237" text-anchor="middle">稀疏 MoE 编码</text><text class="t s" x="1136" y="260" text-anchor="middle">扩容量不等比增 FLOPs</text>
+  <path class="arrow" d="M1038 246H1062"/>
+  <rect class="one" x="936" y="322" width="234" height="78" rx="10"/>
+  <text class="t nh" x="1053" y="350" text-anchor="middle">Session-wise Decoder</text>
+  <text class="t s" x="1053" y="373" text-anchor="middle">一次生成一组上下文连贯的视频列表</text>
+  <path class="arrow" d="M1136 284V306Q1136 316 1160 322"/>
+  <rect class="one" x="936" y="438" width="234" height="66" rx="10"/>
+  <text class="t nh" x="1053" y="465" text-anchor="middle">生成整张推荐列表</text>
+  <text class="t s" x="1053" y="487" text-anchor="middle">列表内部依赖直接进入解码过程</text>
+  <path class="arrow" d="M1053 400V432"/>
+  <rect class="warn" x="894" y="544" width="146" height="72" rx="10"/>
+  <text class="t nh" x="967" y="571" text-anchor="middle">Reward Model</text><text class="t s" x="967" y="593" text-anchor="middle">构造难负样本</text>
+  <rect class="one" x="1068" y="544" width="146" height="72" rx="10"/>
+  <text class="t nh" x="1141" y="571" text-anchor="middle">迭代 DPO</text><text class="t s" x="1141" y="593" text-anchor="middle">偏好对齐列表</text>
+  <path class="arrow" d="M1040 580H1062"/>
+  <path class="loop" d="M1141 544V526Q1141 516 1121 516H1030Q1010 516 1010 504"/>
+  <line class="line" x1="890" y1="646" x2="1216" y2="646"/>
+  <text class="t nh" x="904" y="674">前沿价值</text><text class="t s" x="980" y="674">减小多阶段目标错位，直接优化列表</text>
+  <text class="t nh" x="904" y="704">关键代价</text><text class="t s" x="980" y="704">生成延迟、约束解码、奖励模型偏差</text>
+  <rect class="warn" x="904" y="726" width="298" height="56" rx="10"/>
+  <text class="t s" x="1053" y="750" text-anchor="middle">论文线上结果属于其业务与协议，不能外推成通用收益</text>
+  <text class="t s" x="1053" y="769" text-anchor="middle">工程上仍需要候选合法性、延迟和回滚护栏</text>
+
+  <text class="t s" x="640" y="839" text-anchor="middle">选择顺序：先用成熟级联建立可信基线 → 验证语义 ID / 生成列表带来的独立增益 → 再讨论是否统一系统。</text>
+</svg>

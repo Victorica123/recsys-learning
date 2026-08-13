@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RecSys Demo · 双塔召回 → DeepFM 精排</title>
+<style>
+  :root { --bg:#0f1115; --card:#171a21; --line:#2a2f3a; --text:#e6e8ee; --muted:#8b93a7; --accent:#4f8cff; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+  header { padding:18px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  h1 { font-size:17px; margin:0; }
+  .badge { font-size:12px; padding:3px 10px; border-radius:99px; border:1px solid var(--line); color:var(--muted); }
+  .badge.ok { color:#4cd07d; border-color:#2c7a47; }
+  .badge.err { color:#ff6b6b; border-color:#8a3a3a; }
+  main { max-width:760px; margin:0 auto; padding:24px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:16px; }
+  label { display:block; font-size:12px; color:var(--muted); margin:12px 0 4px; }
+  input, select { width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--line); background:#0b0d11; color:var(--text); font-size:14px; }
+  button { margin-top:16px; padding:10px 18px; border:none; border-radius:8px; background:var(--accent); color:#fff; font-size:14px; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .rec { display:flex; gap:14px; padding:12px 0; border-bottom:1px solid var(--line); align-items:baseline; }
+  .rank { color:var(--accent); font-weight:700; min-width:26px; }
+  .title { flex:1; }
+  .genres { font-size:12px; color:var(--muted); }
+  .score { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .meta { font-size:12px; color:var(--muted); margin-top:10px; word-break:break-all; line-height:1.6; }
+  .error { color:#ff6b6b; font-size:13px; margin-top:10px; white-space:pre-wrap; }
+  .muted { color:var(--muted); font-size:13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>RecSys Demo</h1>
+  <span class="badge" id="health">health: …</span>
+  <span class="badge">双塔召回 50 → DeepFM 精排 Top-K</span>
+</header>
+<main>
+  <div class="card">
+    <label for="apiKey">API Key（服务器未启用鉴权时留空）</label>
+    <input id="apiKey" type="password" placeholder="X-API-Key" autocomplete="off">
+    <label for="user">用户 user_id</label>
+    <select id="user"></select>
+    <label for="k">推荐条数 k</label>
+    <input id="k" type="number" value="10" min="1" max="100">
+    <button id="go" onclick="recommend()">生成推荐</button>
+    <div class="meta" id="meta"></div>
+    <div class="error" id="err"></div>
+  </div>
+  <div class="card" id="results">
+    <div class="muted">选择用户后点击「生成推荐」。</div>
+  </div>
+</main>
+<script>
+const API_KEY = () => document.getElementById('apiKey').value.trim();
+const headers = () => { const h = {'Content-Type':'application/json'}; const k = API_KEY(); if (k) h['X-API-Key'] = k; return h; };
+
+async function api(path, opts) {
+  const res = await fetch(path, Object.assign({headers: headers()}, opts));
+  if (res.status === 401) throw new Error('401：需要正确的 X-API-Key（服务器已启用鉴权）');
+  if (res.status === 429) throw new Error('429：服务过载/限流，请稍后重试');
+  if (res.status === 503) throw new Error('503：模型未就绪');
+  if (!res.ok) throw new Error(res.status + '：' + (await res.text()).slice(0, 200));
+  return res.json();
+}
+
+async function loadHealth() {
+  try { const h = await api('/health'); const el = document.getElementById('health');
+    el.textContent = 'health: ' + h.status; el.className = 'badge ' + (h.status === 'ok' ? 'ok' : 'err');
+  } catch (e) { const el = document.getElementById('health'); el.textContent = 'health: unreachable'; el.className = 'badge err'; }
+}
+
+async function loadUsers() {
+  try { const u = await api('/users?limit=60'); const sel = document.getElementById('user');
+    sel.innerHTML = u.users.map(id => `<option value="${id}">${id}</option>`).join('');
+  } catch (e) { document.getElementById('err').textContent = e.message; }
+}
+
+async function recommend() {
+  const err = document.getElementById('err'); err.textContent = '';
+  const uid = document.getElementById('user').value;
+  const k = document.getElementById('k').value;
+  const results = document.getElementById('results');
+  try {
+    const r = await api(`/recommend?user_id=${uid}&k=${k}`);
+    document.getElementById('meta').innerHTML =
+      `recommendation_id: <b>${r.recommendation_id}</b><br>` +
+      `model: ${r.model_version} · policy: ${r.policy_name} · 候选 ${r.n_candidates}`;
+    const items = r.recommendations;
+    if (!items.length) { results.innerHTML = '<div class="muted">该用户无可用推荐。</div>'; return; }
+    results.innerHTML = items.map(it => `
+      <div class="rec">
+        <div class="rank">${it.rank}</div>
+        <div class="title">${escapeHtml(it.title)}<div class="genres">${escapeHtml(it.genres)}</div></div>
+        <div class="score">${it.score.toFixed(4)}</div>
+      </div>`).join('');
+  } catch (e) { err.textContent = e.message; }
+}
+
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+loadHealth(); loadUsers();
+setInterval(loadHealth, 5000);
+</script>
+</body>
+</html>

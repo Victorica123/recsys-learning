@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "recsys-learning"
+version = "0.1.0"
+description = "生产导向的 MovieLens 推荐系统学习与研究项目"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = [
+    "pandas>=2.0",
+    "numpy>=1.26",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "faiss-cpu>=1.8",
+    "streamlit>=1.36",
+    "starlette>=0.37",
+    "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+# Windows / RTX 50 系 (Blackwell) 需 cu128，用镜像安装（见 README 第五节）：
+#   pip install --index-url https://mirror.sjtu.edu.cn/pytorch-wheels/cu128 torch
+gpu = ["torch>=2.9"]
+dev = ["ruff>=0.6", "coverage>=7.0"]
+
+# ---------------------------------------------------------------------------
+# 项目采用扁平 src/ 布局（训练脚本互相 `from config import ...`），而非
+# Python 包布局。serve.py / app.py / tests/__init__.py 等在入口处把 src/
+# 加入 sys.path。此处不做 setuptools 包化，避免与既有 15+ 处入口约定冲突。
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# 保守起步：只拦真错误（未定义名/运行时错误），不因历史风格问题阻断 CI。
+select = ["E9", "F821"]
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover"]

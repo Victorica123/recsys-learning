@@ -1,0 +1,6 @@
+policy,sessions,avg_user_reward,avg_net_reward,avg_training_objective,avg_session_length,avg_genre_diversity,tool_rate,tool_changed_item_rate,beneficial_tool_rate,successful_tool_rate,avg_expected_gain_when_called
+always_baseline,200,2.769,2.769,2.769,7.51,1.005,0.0,0.0,0.0,0.0,0.0
+always_tool,200,17.95,17.35,18.22125,20.0,2.48,1.0,0.8735,0.8735,0.87125,0.21602
+heuristic_gain_gate,200,17.95,17.4259,18.29715,20.0,2.48,0.8735,1.0,1.0,0.997424,0.247304
+learned_group_relative,200,17.95,17.35,18.22125,20.0,2.48,1.0,0.8735,0.8735,0.87125,0.21602
+learned_no_bonus_ablation,200,17.95,17.35,18.22125,20.0,2.48,1.0,0.8735,0.8735,0.87125,0.21602

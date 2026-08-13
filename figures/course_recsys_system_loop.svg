@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 820" role="img" aria-labelledby="title desc">
+  <title id="title">工业推荐系统：离线训练、在线决策与反馈闭环</title>
+  <desc id="desc">图分为离线训练、在线请求、反馈评估三条泳道，展示数据、模型、召回、精排、重排、曝光日志、反事实评估和发布门槛之间的关系。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" class="arrow-head"/>
+    </marker>
+    <marker id="arrowAccent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" class="accent-head"/>
+    </marker>
+    <style>
+      .bg{fill:#f8fafc}.lane{fill:#ffffff;stroke:#cbd5e1;stroke-width:1.5}.lane-alt{fill:#f1f5f9;stroke:#cbd5e1;stroke-width:1.5}
+      .node{fill:#ffffff;stroke:#64748b;stroke-width:1.5}.node-blue{fill:#e0f2fe;stroke:#0284c7;stroke-width:1.8}.node-green{fill:#dcfce7;stroke:#16a34a;stroke-width:1.8}.node-amber{fill:#fef3c7;stroke:#d97706;stroke-width:1.8}.node-purple{fill:#f3e8ff;stroke:#9333ea;stroke-width:1.8}.gate{fill:#fff7ed;stroke:#ea580c;stroke-width:2}
+      .text{font-family:"Microsoft YaHei","Noto Sans SC",Arial,sans-serif;fill:#0f172a;font-size:16px}.small{font-size:13px;fill:#475569}.tiny{font-size:12px;fill:#64748b}.heading{font-size:28px;font-weight:600}.lane-title{font-size:17px;font-weight:600}.node-title{font-size:16px;font-weight:600}.label{font-size:13px;font-weight:600;fill:#0369a1}
+      .arrow{fill:none;stroke:#475569;stroke-width:2;marker-end:url(#arrow)}.accent{fill:none;stroke:#0284c7;stroke-width:2.4;marker-end:url(#arrowAccent)}.slow{fill:none;stroke:#9333ea;stroke-width:2;stroke-dasharray:7 6;marker-end:url(#arrow)}.feedback{fill:none;stroke:#16a34a;stroke-width:2.4;marker-end:url(#arrowAccent)}
+      .arrow-head{fill:#475569}.accent-head{fill:#0284c7}.legend-line{stroke-width:3}.pill{fill:#e2e8f0}.divider{stroke:#cbd5e1;stroke-width:1}
+      @media (prefers-color-scheme:dark){.bg{fill:#0f172a}.lane{fill:#111827;stroke:#475569}.lane-alt{fill:#172033;stroke:#475569}.node{fill:#1e293b;stroke:#94a3b8}.node-blue{fill:#0c4a6e;stroke:#38bdf8}.node-green{fill:#14532d;stroke:#4ade80}.node-amber{fill:#78350f;stroke:#fbbf24}.node-purple{fill:#581c87;stroke:#c084fc}.gate{fill:#7c2d12;stroke:#fb923c}.text{fill:#f8fafc}.small{fill:#cbd5e1}.tiny{fill:#94a3b8}.label{fill:#7dd3fc}.pill{fill:#334155}.divider{stroke:#475569}.arrow{stroke:#cbd5e1}.arrow-head{fill:#cbd5e1}}
+    </style>
+  </defs>
+  <rect class="bg" width="1280" height="820"/>
+  <text class="text heading" x="40" y="46">工业推荐系统不是一条直线，而是三个不同时间尺度的闭环</text>
+  <text class="text small" x="40" y="72">实线：一次线上请求（毫秒级）　虚线：训练与发布（小时/天级）　绿色：带倾向分的反馈回流</text>
+
+  <rect class="lane-alt" x="30" y="96" width="1220" height="204" rx="18"/>
+  <rect class="pill" x="48" y="116" width="112" height="30" rx="15"/>
+  <text class="text lane-title" x="68" y="137">离线训练</text>
+  <text class="text tiny" x="49" y="165">小时 / 天级</text>
+  <rect class="node" x="184" y="124" width="170" height="92" rx="12"/>
+  <text class="text node-title" x="269" y="153" text-anchor="middle">日志与内容</text>
+  <text class="text small" x="269" y="178" text-anchor="middle">曝光 / 点击 / 序列</text>
+  <text class="text small" x="269" y="199" text-anchor="middle">标题 / 类型 / 上下文</text>
+  <rect class="node" x="402" y="124" width="174" height="92" rx="12"/>
+  <text class="text node-title" x="489" y="153" text-anchor="middle">数据协议</text>
+  <text class="text small" x="489" y="178" text-anchor="middle">切分 · 负采样 · 特征</text>
+  <text class="text small" x="489" y="199" text-anchor="middle">防泄漏 · 固定随机种子</text>
+  <rect class="node-purple" x="624" y="114" width="210" height="112" rx="12"/>
+  <text class="text node-title" x="729" y="144" text-anchor="middle">模型族</text>
+  <text class="text small" x="729" y="169" text-anchor="middle">Two-Tower：召回</text>
+  <text class="text small" x="729" y="190" text-anchor="middle">DeepFM：精排</text>
+  <text class="text small" x="729" y="211" text-anchor="middle">SASRec / RL：序列与长期</text>
+  <rect class="node" x="882" y="124" width="164" height="92" rx="12"/>
+  <text class="text node-title" x="964" y="153" text-anchor="middle">离线评估</text>
+  <text class="text small" x="964" y="178" text-anchor="middle">Recall / NDCG / AUC</text>
+  <text class="text small" x="964" y="199" text-anchor="middle">协议一致才可比较</text>
+  <polygon class="gate" points="1134,118 1216,170 1134,222 1052,170"/>
+  <text class="text node-title" x="1134" y="164" text-anchor="middle">发布门槛</text>
+  <text class="text tiny" x="1134" y="185" text-anchor="middle">效果 + 容量 + 风险</text>
+  <path class="slow" d="M354 170H396"/>
+  <path class="slow" d="M576 170H618"/>
+  <path class="slow" d="M834 170H876"/>
+  <path class="slow" d="M1046 170H1058"/>
+  <text class="text tiny" x="625" y="259">训练损失只是代理目标；上线门槛还要包含延迟、内存、覆盖率、公平性和可回滚性。</text>
+
+  <rect class="lane" x="30" y="322" width="1220" height="218" rx="18"/>
+  <rect class="pill" x="48" y="342" width="112" height="30" rx="15"/>
+  <text class="text lane-title" x="68" y="363">在线决策</text>
+  <text class="text tiny" x="49" y="391">毫秒级</text>
+  <rect class="node" x="184" y="370" width="142" height="88" rx="12"/>
+  <text class="text node-title" x="255" y="400" text-anchor="middle">请求上下文</text>
+  <text class="text small" x="255" y="424" text-anchor="middle">用户 · 时间 · 设备</text>
+  <rect class="node-blue" x="366" y="358" width="174" height="112" rx="12"/>
+  <text class="text node-title" x="453" y="388" text-anchor="middle">多路召回</text>
+  <text class="text small" x="453" y="413" text-anchor="middle">双塔 / I2I / 热门</text>
+  <text class="text small" x="453" y="434" text-anchor="middle">10⁶ → 10²~10⁴</text>
+  <text class="text tiny" x="453" y="455" text-anchor="middle">目标：别漏掉好物品</text>
+  <rect class="node-purple" x="580" y="358" width="174" height="112" rx="12"/>
+  <text class="text node-title" x="667" y="388" text-anchor="middle">精排</text>
+  <text class="text small" x="667" y="413" text-anchor="middle">DeepFM / DIN</text>
+  <text class="text small" x="667" y="434" text-anchor="middle">丰富交叉与序列特征</text>
+  <text class="text tiny" x="667" y="455" text-anchor="middle">目标：把候选排对</text>
+  <rect class="node-amber" x="794" y="358" width="174" height="112" rx="12"/>
+  <text class="text node-title" x="881" y="388" text-anchor="middle">重排 / 策略层</text>
+  <text class="text small" x="881" y="413" text-anchor="middle">多样性 · 约束 · 探索</text>
+  <text class="text small" x="881" y="434" text-anchor="middle">成本感知工具门</text>
+  <text class="text tiny" x="881" y="455" text-anchor="middle">目标：列表整体效用</text>
+  <rect class="node-green" x="1008" y="370" width="178" height="88" rx="12"/>
+  <text class="text node-title" x="1097" y="400" text-anchor="middle">曝光 Top-K</text>
+  <text class="text small" x="1097" y="424" text-anchor="middle">连同 policy / p 记录</text>
+  <path class="accent" d="M326 414H360"/>
+  <path class="accent" d="M540 414H574"/>
+  <path class="accent" d="M754 414H788"/>
+  <path class="accent" d="M968 414H1002"/>
+  <path class="slow" d="M1134 222V286Q1134 310 1110 310H510Q453 310 453 352"/>
+  <path class="slow" d="M1134 222V282Q1134 304 1112 304H700Q667 304 667 352"/>
+  <text class="text label" x="477" y="333">模型制品下发</text>
+
+  <rect class="lane-alt" x="30" y="562" width="1220" height="220" rx="18"/>
+  <rect class="pill" x="48" y="582" width="112" height="30" rx="15"/>
+  <text class="text lane-title" x="68" y="603">反馈与决策</text>
+  <text class="text tiny" x="49" y="631">分钟 / 周级</text>
+  <rect class="node-green" x="184" y="622" width="210" height="108" rx="12"/>
+  <text class="text node-title" x="289" y="651" text-anchor="middle">完整事件日志</text>
+  <text class="text small" x="289" y="676" text-anchor="middle">候选全集 · 排名 · 曝光</text>
+  <text class="text small" x="289" y="697" text-anchor="middle">propensity · click / skip</text>
+  <text class="text tiny" x="289" y="718" text-anchor="middle">未曝光 ≠ 负反馈</text>
+  <rect class="node" x="442" y="622" width="190" height="108" rx="12"/>
+  <text class="text node-title" x="537" y="651" text-anchor="middle">反事实评估 OPE</text>
+  <text class="text small" x="537" y="676" text-anchor="middle">IPS / SNIPS / ESS</text>
+  <text class="text small" x="537" y="697" text-anchor="middle">支持集与覆盖率检查</text>
+  <rect class="node" x="680" y="622" width="190" height="108" rx="12"/>
+  <text class="text node-title" x="775" y="651" text-anchor="middle">不确定性</text>
+  <text class="text small" x="775" y="676" text-anchor="middle">bootstrap 区间</text>
+  <text class="text small" x="775" y="697" text-anchor="middle">分群与长期护栏</text>
+  <polygon class="gate" points="1006,617 1092,676 1006,735 920,676"/>
+  <text class="text node-title" x="1006" y="670" text-anchor="middle">决策</text>
+  <text class="text tiny" x="1006" y="692" text-anchor="middle">A/B / 继续收集 / 回滚</text>
+  <path class="feedback" d="M1097 458V536Q1097 556 1077 556H289Q266 556 266 616"/>
+  <text class="text label" x="874" y="550">曝光与反馈必须绑定同一 tracking_id</text>
+  <path class="feedback" d="M394 676H436"/>
+  <path class="feedback" d="M632 676H674"/>
+  <path class="feedback" d="M870 676H914"/>
+  <path class="slow" d="M920 676H910Q888 676 888 754H224Q202 754 202 732V222Q202 218 208 218"/>
+  <text class="text tiny" x="422" y="773">只有通过支持集、置信区间和业务护栏，反馈才进入下一轮训练；否则只是相关性日志。</text>
+</svg>

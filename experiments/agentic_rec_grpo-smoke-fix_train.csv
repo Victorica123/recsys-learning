@@ -1,0 +1,3 @@
+update,objective_return,user_return,net_return,tool_rate,entropy,kl,loss,elapsed_s,algo
+1,14.843333,14.683333,14.368333,0.577982,0.660544,0.000101,-0.007219,0.525,grpo
+2,11.663333,11.616667,11.321667,0.634409,0.656904,0.000464,-0.010298,0.768,grpo

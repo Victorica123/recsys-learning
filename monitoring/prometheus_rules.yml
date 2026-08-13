@@ -1,0 +1,63 @@
+groups:
+  - name: recsys-api
+    rules:
+      - alert: RecsysApiTargetDown
+        expr: up{job="recsys-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Recommendation API metrics target is down"
+
+      - alert: RecsysModelWorkerNotReady
+        expr: recsys_model_loaded_workers < recsys_workers
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "One or more recommendation workers have no loaded model"
+
+      - alert: RecsysModelLoadFailure
+        expr: increase(recsys_model_load_failures_total[5m]) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "A recommendation worker failed to load its model"
+
+      - alert: RecsysRecommendP99High
+        expr: recsys_request_latency_ms{route="/recommend",status="200",quantile="0.99"} > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Recommendation application p99 exceeds 100 ms"
+
+      - alert: RecsysEventLoopLagHigh
+        expr: recsys_event_loop_lag_ms{quantile="0.99"} > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Recommendation API event-loop p99 lag exceeds 50 ms"
+
+      - alert: RecsysAdmissionShedding
+        expr: increase(recsys_admission_shed_total[5m]) > 50
+        labels:
+          severity: warning
+        annotations:
+          summary: "Recommendation API is shedding concurrent work"
+
+      - alert: RecsysRateLimitRejecting
+        expr: increase(recsys_rate_limit_rejected_total[5m]) > 100
+        labels:
+          severity: warning
+        annotations:
+          summary: "Recommendation API rate limiter is rejecting traffic"
+
+      - alert: RecsysMemoryHigh
+        expr: recsys_process_resident_memory_bytes > 4294967296
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Recommendation API worker RSS exceeds 4 GiB"

@@ -1,0 +1,44 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# 虚拟环境（含 CUDA 版 PyTorch，体积巨大，不入库）
+.venv/
+venv/
+env/
+
+# ---- 数据（用 scripts/download_data.py 拉取，不入库）----
+data/
+# 若未来有需要入库的小型元数据，可对具体文件用 !data/xxx 重新包含
+
+# ---- 模型权重（体积大，可再生；按需用 git-lfs 或外部存储）----
+checkpoints/
+*.pt
+*.zip
+*.pth
+*.onnx
+
+# ---- 运行时状态 / 日志库 ----
+runtime/
+.cache/
+.tmp/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+
+# ---- 本地实验与临时输出 ----
+experiments/*.json
+*.log
+
+# ---- 编辑器 / 系统 ----
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini

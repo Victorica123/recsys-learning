@@ -1,0 +1,23 @@
+# 核心数据分析
+pandas>=2.0
+numpy>=1.26
+matplotlib>=3.8
+seaborn>=0.13
+
+# 向量检索
+faiss-cpu>=1.8
+
+# Demo / 服务化（Starlette/Uvicorn 随 streamlit 生态安装）
+streamlit>=1.36
+starlette>=0.37
+uvicorn>=0.30
+
+# 深度学习：Windows / RTX 50 系（Blackwell）必须 cu128，PyPI 默认源给的是
+# CPU 版，请用交大镜像单独安装，不要写进本文件让 pip 自动装成 CPU 版：
+#   pip install --index-url https://mirror.sjtu.edu.cn/pytorch-wheels/cu128 torch
+# 已装环境（本项目）：torch==2.9.1+cu128
+# torch>=2.9
+
+# 开发工具（可选）：pip install -e ".[dev]" 或单独安装
+# ruff>=0.6
+# coverage>=7.0

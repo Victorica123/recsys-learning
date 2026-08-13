@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 860" role="img" aria-labelledby="title desc">
+  <title id="title">PPO、GRPO、DAPO、GSPO 的信号链和差异</title>
+  <desc id="desc">上半部分展示从采样、奖励、优势、重要性比到策略更新的共同信号链，下半部分逐行比较四种策略优化方法改变了哪个环节及其代价。</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" class="ah"/></marker>
+    <style>
+      .bg{fill:#f8fafc}.panel{fill:#fff;stroke:#cbd5e1;stroke-width:1.4}.blue{fill:#e0f2fe;stroke:#0284c7;stroke-width:1.5}.purple{fill:#f3e8ff;stroke:#9333ea;stroke-width:1.5}.green{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.amber{fill:#fef3c7;stroke:#d97706;stroke-width:1.5}.warn{fill:#fff7ed;stroke:#ea580c;stroke-width:1.4}.neutral{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.2}
+      .t{font-family:"Microsoft YaHei","Noto Sans SC",Arial,sans-serif;fill:#0f172a;font-size:15px}.h{font-size:28px;font-weight:600}.sub{font-size:18px;font-weight:600}.nh{font-size:15px;font-weight:600}.s{font-size:13px;fill:#475569}.xs{font-size:12px;fill:#64748b}.arrow{fill:none;stroke:#475569;stroke-width:1.8;marker-end:url(#a)}.dash{fill:none;stroke:#64748b;stroke-width:1.5;stroke-dasharray:6 5;marker-end:url(#a)}.ah{fill:#475569}.line{stroke:#cbd5e1;stroke-width:1}.accent{font-size:13px;font-weight:600;fill:#7c3aed}
+      @media(prefers-color-scheme:dark){.bg{fill:#0f172a}.panel{fill:#111827;stroke:#475569}.blue{fill:#0c4a6e;stroke:#38bdf8}.purple{fill:#581c87;stroke:#c084fc}.green{fill:#14532d;stroke:#4ade80}.amber{fill:#78350f;stroke:#fbbf24}.warn{fill:#7c2d12;stroke:#fb923c}.neutral{fill:#1e293b;stroke:#64748b}.t{fill:#f8fafc}.s{fill:#cbd5e1}.xs{fill:#94a3b8}.arrow{stroke:#cbd5e1}.dash{stroke:#94a3b8}.ah{fill:#cbd5e1}.line{stroke:#475569}.accent{fill:#c4b5fd}}
+    </style>
+  </defs>
+  <rect class="bg" width="1280" height="860"/>
+  <text class="t h" x="40" y="47">策略优化算法的差别，不在名字，而在“学习信号在哪一级计算”</text>
+  <text class="t s" x="40" y="74">先找共同骨架，再看 PPO → GRPO → DAPO / GSPO 分别替换了优势、裁剪或损失聚合的哪个环节。</text>
+
+  <rect class="panel" x="34" y="98" width="1212" height="222" rx="18"/>
+  <text class="t sub" x="58" y="130">共同信号链：旧策略负责采样，新策略只在固定样本上更新</text>
+  <rect class="neutral" x="58" y="156" width="150" height="82" rx="11"/>
+  <text class="t nh" x="133" y="185" text-anchor="middle">上下文 / 状态</text><text class="t s" x="133" y="208" text-anchor="middle">问题 q 或推荐状态 s</text>
+  <rect class="blue" x="244" y="156" width="166" height="82" rx="11"/>
+  <text class="t nh" x="327" y="185" text-anchor="middle">旧策略采样</text><text class="t s" x="327" y="208" text-anchor="middle">动作 / 多条输出</text>
+  <rect class="green" x="446" y="156" width="150" height="82" rx="11"/>
+  <text class="t nh" x="521" y="185" text-anchor="middle">环境 / 验证器</text><text class="t s" x="521" y="208" text-anchor="middle">得到奖励 R</text>
+  <rect class="purple" x="632" y="146" width="176" height="102" rx="11"/>
+  <text class="t nh" x="720" y="176" text-anchor="middle">优势 A</text>
+  <text class="t s" x="720" y="199" text-anchor="middle">PPO：Critic + GAE</text>
+  <text class="t s" x="720" y="220" text-anchor="middle">GRPO系：组内标准化</text>
+  <rect class="amber" x="844" y="146" width="176" height="102" rx="11"/>
+  <text class="t nh" x="932" y="176" text-anchor="middle">重要性比 r</text>
+  <text class="t s" x="932" y="199" text-anchor="middle">新概率 / 旧概率</text>
+  <text class="t s" x="932" y="220" text-anchor="middle">token 或 sequence 粒度</text>
+  <rect class="warn" x="1056" y="156" width="164" height="82" rx="11"/>
+  <text class="t nh" x="1138" y="185" text-anchor="middle">代理目标 + clip</text><text class="t s" x="1138" y="208" text-anchor="middle">更新新策略</text>
+  <path class="arrow" d="M208 197H238"/><path class="arrow" d="M410 197H440"/><path class="arrow" d="M596 197H626"/><path class="arrow" d="M808 197H838"/><path class="arrow" d="M1020 197H1050"/>
+  <path class="dash" d="M1138 238V274Q1138 292 1120 292H327Q309 292 309 244"/>
+  <text class="t xs" x="706" y="307" text-anchor="middle">完成 K 轮更新后，新策略成为下一轮旧策略；rollout 与 update 必须分清。</text>
+
+  <text class="t sub" x="40" y="359">四种方法各自“改哪里”</text>
+  <rect class="panel" x="34" y="378" width="1212" height="410" rx="18"/>
+  <line class="line" x1="198" y1="378" x2="198" y2="788"/><line class="line" x1="472" y1="378" x2="472" y2="788"/><line class="line" x1="750" y1="378" x2="750" y2="788"/><line class="line" x1="1008" y1="378" x2="1008" y2="788"/>
+  <line class="line" x1="34" y1="430" x2="1246" y2="430"/><line class="line" x1="34" y1="518" x2="1246" y2="518"/><line class="line" x1="34" y1="606" x2="1246" y2="606"/><line class="line" x1="34" y1="694" x2="1246" y2="694"/>
+  <text class="t nh" x="116" y="410" text-anchor="middle">方法</text>
+  <text class="t nh" x="335" y="410" text-anchor="middle">优势从哪里来</text>
+  <text class="t nh" x="611" y="410" text-anchor="middle">比率 / 裁剪粒度</text>
+  <text class="t nh" x="879" y="410" text-anchor="middle">新增稳定器</text>
+  <text class="t nh" x="1127" y="410" text-anchor="middle">成本与边界</text>
+
+  <rect class="blue" x="54" y="447" width="124" height="54" rx="10"/>
+  <text class="t sub" x="116" y="480" text-anchor="middle">PPO</text>
+  <text class="t s" x="335" y="465" text-anchor="middle">Critic 估 V(s)</text><text class="t s" x="335" y="488" text-anchor="middle">GAE 做多步信用分配</text>
+  <text class="t s" x="611" y="465" text-anchor="middle">动作 / token 级 rₜ</text><text class="t s" x="611" y="488" text-anchor="middle">对称 `[1−ε,1+ε]` clip</text>
+  <text class="t s" x="879" y="465" text-anchor="middle">熵、价值损失、KL 监控</text><text class="t s" x="879" y="488" text-anchor="middle">K 轮复用样本</text>
+  <text class="t s" x="1127" y="465" text-anchor="middle">多一个 Critic</text><text class="t s" x="1127" y="488" text-anchor="middle">V 偏差会传入优势</text>
+
+  <rect class="purple" x="54" y="535" width="124" height="54" rx="10"/>
+  <text class="t sub" x="116" y="568" text-anchor="middle">GRPO</text>
+  <text class="t s" x="335" y="553" text-anchor="middle">同一输入采 G 条</text><text class="t s" x="335" y="576" text-anchor="middle">组内奖励标准化</text>
+  <text class="t s" x="611" y="553" text-anchor="middle">通常 token 级比率与 clip</text><text class="t s" x="611" y="576" text-anchor="middle">序列共享同一组优势</text>
+  <text class="t s" x="879" y="553" text-anchor="middle">参考策略 KL（原始配方）</text><text class="t s" x="879" y="576" text-anchor="middle">无需 Critic</text>
+  <text class="t s" x="1127" y="553" text-anchor="middle">把 Critic 成本换成 G 次生成</text><text class="t s" x="1127" y="576" text-anchor="middle">同奖组 A=0，没有梯度</text>
+
+  <rect class="green" x="54" y="623" width="124" height="54" rx="10"/>
+  <text class="t sub" x="116" y="656" text-anchor="middle">DAPO</text>
+  <text class="t s" x="335" y="641" text-anchor="middle">沿用组内优势</text><text class="t s" x="335" y="664" text-anchor="middle">动态过滤全对/全错组</text>
+  <text class="t s" x="611" y="641" text-anchor="middle">token 级损失聚合</text><text class="t s" x="611" y="664" text-anchor="middle">上下 clip 解耦（clip-higher）</text>
+  <text class="t s" x="879" y="636" text-anchor="middle">动态采样 · 过长奖励塑形</text><text class="t s" x="879" y="657" text-anchor="middle">防熵塌缩与截断噪声</text><text class="t s" x="879" y="678" text-anchor="middle">论文配方移除 KL</text>
+  <text class="t s" x="1127" y="641" text-anchor="middle">面向长 CoT 工程问题</text><text class="t s" x="1127" y="664" text-anchor="middle">不能原样照搬到推荐动作</text>
+
+  <rect class="amber" x="54" y="711" width="124" height="54" rx="10"/>
+  <text class="t sub" x="116" y="744" text-anchor="middle">GSPO</text>
+  <text class="t s" x="335" y="729" text-anchor="middle">仍可用组内奖励</text><text class="t s" x="335" y="752" text-anchor="middle">重点不在优势来源</text>
+  <text class="t s" x="611" y="729" text-anchor="middle">序列似然比</text><text class="t s" x="611" y="752" text-anchor="middle">sequence-level clip / update</text>
+  <text class="t s" x="879" y="729" text-anchor="middle">减少 token 比率噪声累积</text><text class="t s" x="879" y="752" text-anchor="middle">报告称更稳地训练 MoE</text>
+  <text class="t s" x="1127" y="729" text-anchor="middle">序列共享一个比率</text><text class="t s" x="1127" y="752" text-anchor="middle">粒度更粗，需按任务验证</text>
+
+  <rect class="warn" x="34" y="808" width="1212" height="38" rx="12"/>
+  <text class="t s" x="640" y="832" text-anchor="middle">迁移原则：先找到自己系统里的真实失败模式（熵塌缩、零优势组、长度偏差、比率噪声），再选择对应修复；不要按论文年份替换算法。</text>
+</svg>
