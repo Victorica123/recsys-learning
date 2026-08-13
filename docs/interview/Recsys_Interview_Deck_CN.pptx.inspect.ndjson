@@ -1,4 +1,4 @@
-{"kind":"deck","id":"pr/69wxx9","name":"Deck"}
+﻿{"kind":"deck","id":"pr/69wxx9","name":"Deck"}
 {"kind":"layout","layoutId":"15ceaba1-f973-4b0b-be30-4100da09b08e","name":"Master","type":"master"}
 {"kind":"layout","layoutId":"8c84da33-e023-4a4e-a5e4-7f110b149fc4","name":"Title Slide","type":"title"}
 {"kind":"slide","id":"sl/vhuue5","slide":1,"title":"PRODUCTION-ORIENTED ML SYSTEM","textShapes":5}
@@ -57,7 +57,7 @@
 {"kind":"textbox","id":"sh/rihcj6lw","slide":4,"name":"retrieval-title","text":"双塔召回","textPreview":"双塔召回","textChars":4,"textLines":1,"bbox":[126,226,350,58]}
 {"kind":"textbox","id":"sh/8nmt07md","slide":4,"name":"retrieval-body","text":"用户塔 / 物品塔\n32 维向量\nFaiss 内积检索","textPreview":"用户塔 / 物品塔 | 32 维向量 | Faiss 内积检索","textChars":27,"textLines":3,"bbox":[126,314,340,128]}
 {"kind":"textbox","id":"sh/tovu9c3y","slide":4,"name":"ranking-title","text":"DeepFM 精排","textPreview":"DeepFM 精排","textChars":9,"textLines":1,"bbox":[780,226,350,58]}
-{"kind":"textbox","id":"sh/lwjy9kn6","slide":4,"name":"ranking-body","text":"用户 + 物品 + 交叉特征\n候选集逐项打分\n测试 AUC 0.804","textPreview":"用户 + 物品 + 交叉特征 | 候选集逐项打分 | 测试 AUC 0.804","textChars":35,"textLines":3,"bbox":[780,314,350,128]}
+{"kind":"textbox","id":"sh/lwjy9kn6","slide":4,"name":"ranking-body","text":"用户 + 物品 + 交叉特征\n候选集逐项打分\n测试 AUC 0.754","textPreview":"用户 + 物品 + 交叉特征 | 候选集逐项打分 | 测试 AUC 0.754","textChars":35,"textLines":3,"bbox":[780,314,350,128]}
 {"kind":"textbox","id":"sh/kvah0f6l","slide":4,"name":"all-items","text":"全库 3,706","textPreview":"全库 3,706","textChars":8,"textLines":1,"bbox":[103,544,210,38]}
 {"kind":"textbox","id":"sh/zu1g7a5g","slide":4,"name":"candidates","text":"50 候选","textPreview":"50 候选","textChars":5,"textLines":1,"bbox":[533,544,210,38]}
 {"kind":"textbox","id":"sh/ytszy5ov","slide":4,"name":"topk","text":"Top-10","textPreview":"Top-10","textChars":6,"textLines":1,"bbox":[963,544,210,38]}
