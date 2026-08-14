@@ -29,4 +29,6 @@ jobs:
         run: ruff check --select E9,F821 src serve.py app.py feedback_app.py scripts tests
 
       - name: Unit tests (CPU, no data / no GPU)
-        run: python -m unittest discover -s tests -v
+        # `-t .` 让 tests 作为包导入，从而触发 tests/__init__.py 把 src/ 加入
+        # sys.path；缺它会漏掉 research_v2 等包的测试并报 import 错误。
+        run: python -m unittest discover -t . -s tests -v

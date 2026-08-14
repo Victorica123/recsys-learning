@@ -98,6 +98,36 @@ recsys-learning/
 └── src/                 ← 所有训练和绘图脚本（带逐行中文注释）
 ```
 
+## 从零复现（新 clone 必读）
+
+仓库**不含**数据与模型权重（在 `.gitignore` 中，避免提交大文件与数据集再分发）。
+克隆后按下面顺序即可从零跑通：
+
+```powershell
+# 1) 建虚拟环境并装依赖（torch 走 CUDA 镜像，见「五、环境说明」）
+python -m venv .venv
+.venv/Scripts/python.exe -m pip install -r requirements.txt
+
+# 2) 下载 MovieLens-1M（约 6 MB，自动解压到 data/ml-1m/）
+.venv/Scripts/python.exe src/download_data.py
+
+# 3) 训练召回/精排（GPU 上约 10 分钟，CPU 也可但更慢）
+.venv/Scripts/python.exe src/train_mf.py
+.venv/Scripts/python.exe src/train_deepfm.py --epochs 15
+.venv/Scripts/python.exe src/train_two_tower.py
+
+# 4) 起 Demo / REST API
+.venv/Scripts/python.exe -m streamlit run app.py
+.venv/Scripts/python.exe serve.py --port 8000 --preload
+
+# 5) 自检
+.venv/Scripts/python.exe scripts/ai_startup_harness.py --check
+.venv/Scripts/python.exe scripts/ai_startup_harness.py --test
+```
+
+CI（`.github/workflows/ci.yml`）会在**无数据 / 无 GPU** 的干净环境跑语法检查 + 86 项
+单元测试，验证代码可被任何人复现。
+
 ## 运行 Demo
 
 ```bash
