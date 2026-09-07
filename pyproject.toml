@@ -7,23 +7,28 @@ name = "recsys-learning"
 version = "0.1.0"
 description = "生产导向的 MovieLens 推荐系统学习与研究项目"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 license = { text = "MIT" }
 dependencies = [
-    "pandas>=2.0",
-    "numpy>=1.26",
-    "matplotlib>=3.8",
-    "seaborn>=0.13",
-    "faiss-cpu>=1.8",
-    "streamlit>=1.36",
-    "starlette>=0.37",
-    "uvicorn>=0.30",
+    "torch==2.9.1",
+    "pandas==3.0.3",
+    "numpy==2.5.1",
+    "matplotlib==3.11.1",
+    "seaborn==0.13.2",
+    "faiss-cpu==1.14.3",
+    "streamlit==1.59.2",
+    "starlette==1.3.1",
+    "uvicorn==0.51.0",
+    "gymnasium==1.2.2",
 ]
 
 [project.optional-dependencies]
-# Windows / RTX 50 系 (Blackwell) 需 cu128，用镜像安装（见 README 第五节）：
-#   pip install --index-url https://mirror.sjtu.edu.cn/pytorch-wheels/cu128 torch
-gpu = ["torch>=2.9"]
+# LunarLander 番外需要 Box2D；核心推荐链路与 CPU 测试不依赖它。
+lander = [
+    "stable-baselines3==2.7.0",
+    "gymnasium[box2d]==1.2.2",
+    "pillow==12.3.0",
+]
 dev = ["ruff>=0.6", "coverage>=7.0"]
 
 # ---------------------------------------------------------------------------

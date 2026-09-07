@@ -74,7 +74,7 @@ def main() -> None:
         if not ckpt_path.exists():
             print(f"skip missing checkpoint: {ckpt_path.name}")
             continue
-        ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+        ck = torch.load(ckpt_path, map_location="cpu", weights_only=True)
         args = ck["args"]
         model = SASRec(
             n_items, args["d"], args["maxlen"], args["blocks"],

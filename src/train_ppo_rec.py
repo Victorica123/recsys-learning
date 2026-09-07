@@ -186,7 +186,7 @@ def main():
 
     start = 1
     if args.resume and ckpt_path.exists():
-        ck = torch.load(ckpt_path, map_location=DEVICE, weights_only=False)
+        ck = torch.load(ckpt_path, map_location=DEVICE, weights_only=True)
         ac.load_state_dict(ck["model"])
         opt.load_state_dict(ck["opt"])
         start = ck["update"] + 1

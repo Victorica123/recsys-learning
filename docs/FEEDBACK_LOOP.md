@@ -9,8 +9,8 @@ GET /recommend
   -> SQLite 记录候选池、实际展示集合、模型版本和真实行为策略概率
   -> POST /events/impression 确认客户端实际曝光
   -> POST /events/feedback 写入点击/喜欢/不喜欢/跳过/停留
-  -> scripts/feedback_replay.py 导出不可覆盖的 JSONL
-  -> item-level IPS / SNIPS + 支持度检查
+  -> scripts/feedback_replay.py 按 policy/model 队列导出不可覆盖的 JSONL
+  -> item-level IPS / SNIPS + 交叉拟合 DR + 支持度/数据质量门
 ```
 
 SQLite 使用 WAL 模式和短连接，同一台主机上的多个 Uvicorn worker 可以共享。
@@ -44,7 +44,7 @@ SQLite 使用 WAL 模式和短连接，同一台主机上的多个 Uvicorn worke
 .venv/Scripts/python.exe serve.py `
   --port 8000 --preload --workers 2 `
   --feedback-db runtime/feedback/events.sqlite3 `
-  --model-version two-tower-deepfm-ml1m-v1
+  --model-version two-tower-retrieval-ml1m-v2
 ```
 
 需要评估不同 Top-K 策略时，必须显式开启有限探索，例如：
@@ -54,7 +54,7 @@ SQLite 使用 WAL 模式和短连接，同一台主机上的多个 Uvicorn worke
   --port 8000 --preload `
   --exploration-rate 0.05 `
   --exploration-pool 20 `
-  --model-version two-tower-deepfm-ml1m-v1
+  --model-version two-tower-retrieval-ml1m-v2
 ```
 
 行为策略以 `1-epsilon` 的概率展示排序 Top-K，以 `epsilon` 的概率从候选池
@@ -107,6 +107,8 @@ Content-Type: application/json
 .venv/Scripts/python.exe scripts/feedback_replay.py `
   --db runtime/feedback/events.sqlite3 `
   --tag 20260727-v1 `
+  --policy-name retrieval_epsilon_slate_v2 `
+  --model-version two-tower-retrieval-ml1m-v2 `
   --target-k 10 `
   --diversity-weight 0.15 `
   --min-recommendations 200 `
@@ -118,12 +120,20 @@ Content-Type: application/json
 
 - `experiments/feedback_<tag>.jsonl`：候选级不可变快照，包含未曝光候选；
 - `experiments/feedback_<tag>_ope.json`：协议、SHA-256、数据画像、
-  IPS/SNIPS、有效样本量、bootstrap 置信区间、支持度和上线门槛。
+  IPS/SNIPS、交叉拟合 DR、有效样本量、bootstrap 置信区间、支持度和上线门槛。
 
-当前候选策略为 `DeepFM + 类型多样性重排`：贪心选择时，在 DeepFM 分数上加入
+回放 schema 当前为 v2。每行都带 `schema_version`，导出器会检查同一推荐内的
+`movie_id`/rank 唯一性、propensity 范围、曝光与奖励的一致性。数据库存在多个
+`policy_name/model_version` 队列时，脚本会拒绝无过滤导出；两项过滤器都必须显式
+指定，避免把历史 DeepFM、当前双塔或不同探索率产生的日志静默混算。
+
+当前 v2 候选策略为 `双塔相似度 + 类型多样性重排`：贪心选择时，在双塔分数上加入
 尚未覆盖电影类型的奖励。报告按推荐批次做配对 item-inclusion IPS，并以匿名
-体验者为 cluster 对“候选策略 - DeepFM Top-K”的差值做 percentile
+体验者为 cluster 对“候选策略 - 双塔 Top-K”的差值做 percentile
 bootstrap，避免把同一人的大量重复评价误当作独立用户。默认门槛：
+
+历史 `*_v1` policy 使用 DeepFM 基线，仍原样保留在 SQLite 中。当前采集器使用
+`retrieval_*_v2` policy_name，回放时不得跨版本混算。
 
 - 推荐批次不少于 200；
 - 匿名体验者不少于 5；
@@ -134,6 +144,12 @@ bootstrap，避免把同一人的大量重复评价误当作独立用户。默�
 通过门槛后，差值置信区间全大于 0 才输出 `promote_candidate`；全小于 0 输出
 `keep_baseline`；跨过 0 输出 `continue_experiment`。未过数据门槛一律输出
 `collect_more_data`。
+
+正式决策门保持预注册的 IPS；DR 是稳健性复核，不替换决策门。结果模型使用
+recommendation-level 交叉拟合 ridge，只在已曝光行上学习奖励，却为全部候选生成
+out-of-fold 预测。它只使用 score、rank、genre hash、匿名 actor bucket 及其交叉等
+不含结果的特征。若 IPS 与 DR 方向冲突，应停止解释并诊断覆盖率、propensity 和
+结果模型，而不是挑选更好看的估计器。
 
 奖励协议固定为：click +1、like +2、dislike -1、skip 0、
 `dwell_seconds` 最多 +1。修改奖励定义时应升级协议版本，不应静默重算旧报告。
@@ -149,6 +165,30 @@ bootstrap，避免把同一人的大量重复评价误当作独立用户。默�
   压测数据库不得并入默认反馈库。
 - 当前 SQLite 方案面向单机最小闭环。跨主机写入、事件流、隐私删除和数据保留
   策略仍需要外部基础设施。
+
+## OPE 校准与当前证据
+
+`scripts/validate_ope_estimators.py` 生成带已知反事实奖励均值的候选级合成曝光数据，
+用独立的 oracle 直接计算两个目标策略真值，再对 IPS、SNIPS 和交叉拟合 DR 做误差
+校准：
+
+```powershell
+.venv/Scripts/python.exe scripts/validate_ope_estimators.py `
+  --tag <新的唯一标签> --recommendations 5000 `
+  --pool-size 10 --slate-k 3 --exploration-rate 0.30 `
+  --actors 20 --bootstrap-samples 500 --seed 42
+```
+
+固定种子正式产物 `p2-ope-calibration-5000-v2` 中，oracle 策略增量为
+0.02684；IPS / SNIPS / DR 的增量绝对误差分别为 0.00028 / 0.00859 /
+0.00812。这里精确 propensity 与大样本使 IPS 最准，而线性结果模型存在失配，
+所以 **DR 并不天然优于 IPS**；校准的目的正是暴露这种边界。
+
+现有真实库中唯一可回放的历史探索队列审计为
+`p2-personal-pilot-v1-dr-audit`：21 次推荐、1 位体验者、候选策略 ESS 17.6。
+IPS 增量 +0.0212，而 DR 增量 -0.0489，且 actor cluster 只有一个，正式质量门
+正确输出 `collect_more_data`。这批数据只证明链路可运行，不能作为当前 v2 双塔策略
+或上线收益的证据；当前 v2 队列尚需重新采集。
 
 ## 外部问卷可迁移性检查
 

@@ -32,7 +32,9 @@ Use the project virtual environment at `.venv/Scripts/python.exe` and run comman
 ## Task Routing
 
 - Data and baseline models: `src/explore_data.py`, `src/train_mf.py`.
-- CTR ranking: `src/train_deepfm.py`.
+- Explicit positive-rating ranking with CTR-style LR/FM/DeepFM architectures
+  (MovieLens has no impression/click labels; do not call this real CTR):
+  `src/train_deepfm.py`.
 - Retrieval: `src/train_two_tower.py` and `src/plot_two_tower.py`.
 - Exploration: `src/run_bandit.py`.
 - Sequence recommendation: `src/train_sasrec.py`.
@@ -40,5 +42,34 @@ Use the project virtual environment at `.venv/Scripts/python.exe` and run comman
   `src/train_ppo_rec.py` (PPO/GAE; roadmap in `notes/14-前沿RL论文与落地路线.md`).
 - Offline RL / post-training: `research_v2/phase2_offline_rl/` (SFT/behavior cloning + CQL + IQL; logs → offline training).
 - Agentic tool selection: `research_v3/agentic_rec/` (cost-aware baseline/tool gate + group-relative REINFORCE).
+- Reranker retraining: `src/train_reranker.py` (retrieval-aligned hard
+  negatives, listwise loss, cross features, residual-from-retrieval). Load an
+  alternative ranker anywhere via `Recommender.load(deepfm_ckpt=...)`.
+  Current status: v0 is a proven end-to-end net loss and must not be served;
+  the best version (v6, `--residual --oof-folds 4`) only ties the no-reranking
+  baseline (CI straddles zero). The residual gate settles at 6% of the
+  retrieval weight and negative - the ranker has no information the retriever
+  lacks, so further ranker tuning is not the productive direction.
+- Evaluation protocols: `train_two_tower.py --split {loo,time}`. `loo` is the
+  primary protocol (comparable with the SASRec reproduction) but permits time
+  travel; `time` has none and scores 0.069 vs 0.098. Always name the protocol
+  when quoting a retrieval metric; never quote only the higher one.
+- Offline evaluation beyond per-stage metrics:
+  `scripts/eval_end_to_end.py` (retrieval -> ranking funnel; the served path),
+  `scripts/benchmark_retrieval.py` (rolling full-catalog baselines),
+  `scripts/benchmark_generative_retrieval.py` (TIGER-lite semantic IDs),
+  `scripts/eval_multiroute_ranker.py` (RRF + sequence residual ranker),
+  and `scripts/agentic_cost_sweep.py` / `scripts/agentic_multitool_experiment.py`
+  (tool budgets with >=10-seed inference guardrails). All refuse to overwrite a
+  `--tag`.
+- Checkpoint loading: use `src/checkpoint_io.py::load_torch_checkpoint` for
+  project checkpoints. It forbids `weights_only=False`; manifest SHA-256 is
+  verified when `verify_hash=True` / `RECSYS_VERIFY_CHECKPOINTS=1` is set.
+  Never add a raw `torch.load(..., weights_only=False)` back into a
+  serving/evaluation path.
+- Release verification: `scripts/verify_release.py --profile serve|research`
+  and `scripts/ai_startup_harness.py --release`; update
+  `artifacts/release_manifest.json` whenever a pinned artifact legitimately changes.
 - Product/demo surface: `app.py` (Streamlit) and `serve.py` (REST API), both reusing `src/serving.py`.
 - Automated tests: `tests/` (stdlib `unittest`, CPU-only; run via harness `--test`).
+  Never hardcode the test count in documentation; cite the command instead.

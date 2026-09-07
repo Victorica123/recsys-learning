@@ -9,7 +9,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from daimon_runtime import setup_plot
+from plotting import setup_plot
 
 setup_plot()
 

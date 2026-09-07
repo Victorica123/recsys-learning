@@ -26,12 +26,14 @@ from serving import Recommender, check_artifacts  # noqa: E402
 DEFAULT_DB = Path(os.environ.get(
     "RECSYS_FEEDBACK_DB", ROOT / "runtime" / "feedback" / "events.sqlite3"))
 MODEL_VERSION = os.environ.get(
-    "RECSYS_MODEL_VERSION", "two-tower-deepfm-ml1m-v1")
+    "RECSYS_MODEL_VERSION", "two-tower-retrieval-ml1m-v2")
 
 PILOT_MODE = "快速个人试验"
 FORMAL_MODE = "多人正式评估"
-PILOT_POLICY = "epsilon_slate_personal_pilot_v1"
-FORMAL_POLICY = "epsilon_slate_formal_v1"
+# v2 明确使用已经晋升的双塔 Top-K。v1 的 DeepFM 数据仍保留在 SQLite，
+# 但不能与新策略混算；版本化 policy_name 让 replay 自然隔离两批实验。
+PILOT_POLICY = "retrieval_epsilon_slate_personal_pilot_v2"
+FORMAL_POLICY = "retrieval_epsilon_slate_formal_v2"
 
 PILOT_K = 5
 PILOT_POOL_SIZE = 10
@@ -266,13 +268,13 @@ def decision_text(decision: str, pilot: bool) -> str:
     if pilot:
         return {
             "promote_candidate": "个人试验倾向：采用多样性重排",
-            "keep_baseline": "个人试验倾向：保留 DeepFM 基线",
+            "keep_baseline": "个人试验倾向：保留双塔基线",
             "continue_experiment": "个人试验暂不明确，建议继续积累",
             "collect_more_data": "个人试验数据质量暂未过门槛",
         }[decision]
     return {
         "promote_candidate": "正式结论：采用多样性重排",
-        "keep_baseline": "正式结论：保留 DeepFM 基线",
+        "keep_baseline": "正式结论：保留双塔基线",
         "continue_experiment": "正式结论：当前差异不显著，继续实验",
         "collect_more_data": "尚未达到正式评估门槛",
     }[decision]

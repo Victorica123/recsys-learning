@@ -217,7 +217,7 @@ def main():
     start_epoch = 1
     ckpt_path = CKPT_DIR / args.ckpt
     if args.resume and ckpt_path.exists():
-        ck = torch.load(ckpt_path, weights_only=False)
+        ck = torch.load(ckpt_path, weights_only=True)
         model.load_state_dict(ck["model"])
         if "opt" in ck:
             opt.load_state_dict(ck["opt"])

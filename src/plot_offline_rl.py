@@ -14,6 +14,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from plotting import setup_plot
 
 ROOT = Path(__file__).resolve().parent.parent
 EXP = ROOT / "experiments"
@@ -21,25 +22,7 @@ FIG = ROOT / "figures"
 FIG.mkdir(exist_ok=True)
 
 
-def setup_chinese_font():
-    """优先用 Kimi Work 托管字体；本地则回退到 Windows 中文字体。"""
-    try:
-        from daimon_runtime import setup_plot  # Kimi Work 环境
-        setup_plot()
-        return
-    except Exception:
-        pass
-    from matplotlib import font_manager
-    for fp in (r"C:\Windows\Fonts\msyh.ttc", r"C:\Windows\Fonts\simhei.ttf"):
-        if Path(fp).exists():
-            font_manager.fontManager.addfont(fp)
-            name = font_manager.FontProperties(fname=fp).get_name()
-            plt.rcParams["font.family"] = name
-            break
-    plt.rcParams["axes.unicode_minus"] = False
-
-
-setup_chinese_font()
+setup_plot()
 
 
 def reward_of(df, policy):

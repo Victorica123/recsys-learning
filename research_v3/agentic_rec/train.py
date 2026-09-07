@@ -135,7 +135,8 @@ def train_group_relative_policy(
     kl_coef: float,
     epochs: int,
     device: str,
-    log_path: Path,
+    log_path: Path | None = None,
+    verbose: bool = True,
 ) -> tuple[ToolPolicy, list[dict]]:
     if group_size < 2:
         raise ValueError("group_size must be at least 2")
@@ -242,7 +243,10 @@ def train_group_relative_policy(
             "algo": algo,
         }
         history.append(row)
-        if update == 1 or update == updates or update % max(1, updates // 5) == 0:
+        if verbose and (
+            update == 1 or update == updates
+            or update % max(1, updates // 5) == 0
+        ):
             print(
                 f"  update {update:>3}/{updates} | user={row['user_return']:.3f} "
                 f"net={row['net_return']:.3f} tool={row['tool_rate']:.1%} "
@@ -250,10 +254,13 @@ def train_group_relative_policy(
                 flush=True,
             )
 
-    with log_path.open("x", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(history[0].keys()))
-        writer.writeheader()
-        writer.writerows(history)
+    # Sweeps reuse this trainer dozens of times and only want the returned
+    # history in memory; only the tagged single runs persist a CSV.
+    if log_path is not None:
+        with log_path.open("x", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(history[0].keys()))
+            writer.writeheader()
+            writer.writerows(history)
     return policy, history
 
 

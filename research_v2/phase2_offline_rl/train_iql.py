@@ -40,7 +40,7 @@ def load_bc_checkpoint(prefix, name, state_dim):
     path = ROOT / "checkpoints" / f"{prefix}_{name}.pt"
     if not path.exists():
         return None
-    ck = torch.load(path, map_location=DEVICE, weights_only=False)
+    ck = torch.load(path, map_location=DEVICE, weights_only=True)
     model = BCPolicy(state_dim, N_ACTIONS).to(DEVICE)
     model.load_state_dict(ck["model"])
     model.eval()
@@ -51,7 +51,7 @@ def load_cql_checkpoint(prefix, name, state_dim, cql_alpha):
     path = ROOT / "checkpoints" / f"{prefix}_{name}.pt"
     if not path.exists():
         return None
-    ck = torch.load(path, map_location=DEVICE, weights_only=False)
+    ck = torch.load(path, map_location=DEVICE, weights_only=True)
     agent = CQLAgent(state_dim, N_ACTIONS, gamma=GAMMA, lr=1e-4,
                      cql_alpha=cql_alpha, device=DEVICE)
     agent.online.load_state_dict(ck["model"])

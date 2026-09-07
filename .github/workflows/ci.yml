@@ -18,8 +18,11 @@ jobs:
       - name: Install dependencies (CPU)
         run: |
           python -m pip install --upgrade pip
-          pip install --index-url https://download.pytorch.org/whl/cpu torch
-          pip install pandas numpy matplotlib seaborn faiss-cpu streamlit starlette uvicorn ruff coverage
+          pip install --index-url https://download.pytorch.org/whl/cpu torch==2.9.1
+          pip install -e ".[dev]"
+
+      - name: Validate release declarations
+        run: python scripts/verify_release.py --manifest-only
 
       - name: Syntax check
         run: |

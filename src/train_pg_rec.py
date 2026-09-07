@@ -79,7 +79,7 @@ def main():
 
     start = 1
     if args.resume and CKPT.exists():
-        ck = torch.load(CKPT, map_location=DEVICE, weights_only=False)
+        ck = torch.load(CKPT, map_location=DEVICE, weights_only=True)
         ac.load_state_dict(ck["model"]); opt.load_state_dict(ck["opt"])
         start = ck["update"] + 1
         print(f"[resume] 从 update {start} 继续", flush=True)

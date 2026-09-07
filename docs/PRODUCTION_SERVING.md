@@ -10,6 +10,7 @@
   --host 0.0.0.0 `
   --port 8000 `
   --preload `
+  --ranking-policy retrieval `
   --workers 2 `
   --max-in-flight 8 `
   --rate-limit 80 `
@@ -26,9 +27,32 @@
   `429 / code=rate_limited`。
 - `--workers`：每个 worker 都会加载一份模型；本机实测 1/2/4 worker
   约占 0.89/1.78/3.55 GiB RSS。
+- `--ranking-policy retrieval`：默认且已晋升的双塔 Top-K。只有做失败复现或
+  候选排序器离线验证时才显式使用 `deepfm`；可同时传 `--ranker-checkpoint`。
 
-对外绑定 `0.0.0.0` 时，必须由防火墙或反向代理限制管理指标端点；当前服务本身
-不实现身份认证或 TLS。
+### 权重供应链校验
+
+服务通过 `src/checkpoint_io.py` 加载权重，默认强制 `weights_only=True`；
+已登记权重的 size+SHA-256 启动校验是显式开关，适合部署参考产物时启用：
+
+```powershell
+serve.py --preload --verify-checkpoint-hashes
+# 或环境变量 RECSYS_VERIFY_CHECKPOINTS=1
+```
+
+开启后，若权重在 `artifacts/release_manifest.json` 中登记且不匹配，则**启动失败**。
+从零训练复现时不要开启该开关，因为自训权重尚未登记进 manifest。
+
+对外绑定 `0.0.0.0` 时，必须由防火墙或反向代理限制管理指标端点；服务支持可选
+`X-API-Key`，但不实现 TLS，生产环境仍应放在入口网关之后。
+
+### 当前默认路径延迟参考
+
+2026-08-16 复测（默认双塔 Top-K、`--concurrency 1`、200 请求）：
+
+- WSL/Linux CPU、SQLite 位于本地 `/tmp`：HTTP mean **5.42 ms**，p95 **9.67 ms**；
+- 推荐核心约 **0.19 ms**；
+- 旧 Windows DeepFM 路径 4.6 ms 只作历史参考，不代表当前默认服务。
 
 ## 探针与指标
 
@@ -125,7 +149,7 @@ scrape_configs:
 `runtime/feedback/events.sqlite3`，多 worker 通过 WAL 共享。压测和生产冒烟
 脚本使用按 tag 隔离的数据库，避免把合成流量混入默认反馈。
 
-上线时必须显式设置稳定的 `--model-version` 和持久盘上的
+上线时必须显式设置稳定的 `--model-version`、`--ranking-policy` 和持久盘上的
 `--feedback-db`。默认 `--exploration-rate 0`；探索会改变用户看到的物品，
 只有在业务护栏和实验授权齐备时才应开启。事件协议、导出、OPE 解释边界见
 `docs/FEEDBACK_LOOP.md`。

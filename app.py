@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-阶段 5：推荐系统可交互 Demo（工业界"召回 → 排序"两段式流水线）
+阶段 5：推荐系统可交互 Demo（默认双塔 Top-K，可显式查看失败精排对照）
 
 任选一个用户，实时演示：
-  1) 双塔模型 + Faiss 从 3706 部电影中召回 50 个候选（毫秒级）
-  2) DeepFM 对 50 个候选逐个打"喜欢概率"，精排出 Top-10
+  1) 双塔模型 + Faiss 从 3706 部电影中召回候选并直接返回 Top-10
+  2) 可显式切换到 DeepFM，复现已证实为端到端净损失的旧精排路径
 
 流水线核心复用 `src/serving.py` 的 `Recommender`（与 REST API `serve.py` 同源），
 本文件只负责 Streamlit 展示层。
@@ -27,17 +27,27 @@ st.set_page_config(page_title="智能推荐 Demo", page_icon="🎬", layout="wid
 
 
 @st.cache_resource
-def get_recommender():
-    """加载数据 + 两个模型（只在第一次运行时执行，Streamlit 会缓存）。"""
-    return Recommender.load(ROOT)
+def get_recommender(ranking_policy: str):
+    """加载所选策略（按策略缓存，默认不会加载 DeepFM）。"""
+    return Recommender.load(ROOT, ranking_policy=ranking_policy)
 
 
 def main():
     st.title("🎬 智能推荐系统 Demo")
-    st.caption("双塔召回（Faiss 向量检索） → DeepFM 精排 —— 工业界标准两段式架构")
+    st.caption("默认线上策略：双塔召回（Faiss）直接返回 Top-K")
+
+    ranking_policy = st.sidebar.selectbox(
+        "推荐策略",
+        options=("retrieval", "deepfm"),
+        format_func=lambda value: (
+            "双塔 Top-K（默认、已晋升）" if value == "retrieval"
+            else "DeepFM v0（失败复现，不应上线）"))
+    if ranking_policy == "deepfm":
+        st.warning("当前启用的是失败复现路径：端到端 Recall@10 0.065，"
+                   "显著低于双塔 Top-10 的 0.098。")
 
     # ---- 产物自检：缺文件时给出可执行的修复指引，而不是抛栈 ----
-    missing = check_artifacts(ROOT)
+    missing = check_artifacts(ROOT, ranking_policy=ranking_policy)
     if missing:
         st.error("缺少运行 Demo 所需的模型/数据文件，无法启动推荐流水线。")
         st.dataframe(pd.DataFrame(
@@ -48,11 +58,11 @@ def main():
 
     # ---- 加载模型/数据：损坏或版本不匹配时降级为友好报错 ----
     try:
-        rec = get_recommender()
+        rec = get_recommender(ranking_policy)
     except Exception as exc:  # 权重损坏、字段错位、依赖缺失等
         st.error(f"模型或数据加载失败：{type(exc).__name__}: {exc}")
         st.info("请确认 checkpoints/ 下的权重与当前代码版本匹配；"
-                "如权重损坏，可用 src/train_two_tower.py、src/train_deepfm.py 重新训练。")
+                "如权重损坏，可用对应训练脚本重新训练。")
         st.stop()
 
     # ---------------- 侧边栏：选用户 ----------------
@@ -79,26 +89,35 @@ def main():
     # ---------------- 右列：推荐结果 ----------------
     with col2:
         st.subheader("🎯 模型推荐的 Top-10")
-        with st.spinner("双塔召回 → DeepFM 精排中 ..."):
+        spinner = ("双塔召回中 ..." if ranking_policy == "retrieval"
+                   else "双塔召回 → 实验 DeepFM 精排中 ...")
+        with st.spinner(spinner):
             result = rec.recommend(user_id, k=10, n_candidates=50)
         recs = result["recommendations"]
         # 空候选集：用户几乎看遍全库，或召回全部命中已看过 —— 优雅退出而非崩溃
         if not recs:
             st.warning("该用户已覆盖召回到的全部候选，暂无可推荐的新电影。")
             return
-        st.caption(f"双塔从 {rec.n_items} 部电影中召回 {result['n_candidates']} 个候选，"
-                   f"DeepFM 精排出 Top-{len(recs)}")
+        stage = ("按双塔相似度直接取" if ranking_policy == "retrieval"
+                 else "经实验 DeepFM 重排得到")
+        st.caption(f"双塔从 {rec.n_items} 部电影中召回 "
+                   f"{result['n_candidates']} 个候选，{stage} Top-{len(recs)}")
+        score_name = ("双塔相似度" if ranking_policy == "retrieval"
+                      else "正向评分概率")
+        score_values = ([f"{r['score']:.4f}" for r in recs]
+                        if ranking_policy == "retrieval"
+                        else [f"{r['score']:.1%}" for r in recs])
         st.dataframe(pd.DataFrame({
-            "喜欢概率": [f"{r['score']:.1%}" for r in recs],
+            score_name: score_values,
             "电影": [r["title"] for r in recs],
             "类型": [r["genres"] for r in recs]}),
             hide_index=True, use_container_width=True)
 
     st.divider()
     st.markdown("**架构说明**：双塔模型把用户和电影分别编码成 32 维向量，"
-                "Faiss 内积检索完成召回（快，全库毫秒级）；DeepFM 融合用户画像、"
-                "电影特征和它们的交叉信息，对每个候选精排（准，但只能处理少量候选）。"
-                "这就是抖音/淘宝推荐的最小完整原型。")
+                "Faiss 内积检索完成全库召回。项目的端到端实验发现现有 DeepFM "
+                "缺少召回之外的互补信息，重排会显著伤害 Recall，因此默认直接使用"
+                "双塔 Top-K；旧排序器只保留为可复现的失败对照。")
 
 
 if __name__ == "__main__":

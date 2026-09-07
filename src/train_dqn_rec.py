@@ -43,7 +43,7 @@ STATE_DIM = 64 + len(GENRES) + 1   # ctx + 最近5次推荐类型直方图 + 连
 
 def load_user_model(ckpt_path):
     """加载冻结的 SASRec 用户模型, 返回 (model, maxlen, n_items)。"""
-    ck = torch.load(ckpt_path, map_location=DEVICE, weights_only=False)
+    ck = torch.load(ckpt_path, map_location=DEVICE, weights_only=True)
     a = ck["args"]
     n_items = ck["model"]["item_emb.weight"].shape[0] - 1
     model = SASRec(n_items=n_items, d=a["d"], max_len=a["maxlen"],
@@ -197,7 +197,7 @@ def train(ckpt, steps, lr, eps_end, tag, resume=None):
     buf = deque(maxlen=100_000)
     start_eps = 1.0
     if resume and os.path.exists(resume):
-        ck = torch.load(resume, map_location=DEVICE, weights_only=False)
+        ck = torch.load(resume, map_location=DEVICE, weights_only=True)
         q.load_state_dict(ck["model"]); qt.load_state_dict(ck["model"])
         opt.load_state_dict(ck["opt"]); start_eps = ck["eps"]
         print(f"[resume] {resume} eps={start_eps:.3f}", flush=True)
@@ -291,7 +291,7 @@ def compare_only(ckpt, tag, resume, n_sessions=300):
     sasrec, maxlen, _ = load_user_model(ckpt)
     assets = load_rec_assets()
     q = QNet().to(DEVICE)
-    ck = torch.load(resume, map_location=DEVICE, weights_only=False)
+    ck = torch.load(resume, map_location=DEVICE, weights_only=True)
     q.load_state_dict(ck["model"])
     q.eval()
     final_compare(sasrec, maxlen, assets, q, tag, n_sessions)

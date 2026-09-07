@@ -150,7 +150,7 @@ def main():
     start_epoch = 0
     ckpt_path = CKPT_DIR / "mf.pt"
     if args.resume and ckpt_path.exists():
-        ckpt = torch.load(ckpt_path, weights_only=False)
+        ckpt = torch.load(ckpt_path, weights_only=True)
         model.load_state_dict(ckpt["model"])
         start_epoch = ckpt["epoch"]
         print(f"已从 checkpoint 恢复（epoch {start_epoch}），继续训练")

@@ -1,0 +1,4 @@
+window,train_frac,model,seed,final_train_loss,elapsed_s,test_users,recall@10,recall@10_ci95,ndcg@10,mrr@10,catalog_coverage@10,long_tail_share@10,avg_log_popularity@10,novelty_bits@10,candidate_catalog_size,sampled_negatives,cold_target_users,cold_item_recall@10
+1,0.7,tiger_lite_rqkmeans,42,1.95348,52.7,218,0.073394,"[0.041284, 0.110092]",0.04555,0.037009,0.03292,0.0,7.000911,8.550651,3706,False,0,
+2,0.8,tiger_lite_rqkmeans,42,1.95789,53.0,252,0.043651,"[0.019841, 0.06746]",0.021408,0.014906,0.034269,0.000397,7.123801,8.554747,3706,False,0,
+3,0.9,tiger_lite_rqkmeans,42,1.960752,61.2,891,0.03367,"[0.022447, 0.047138]",0.017916,0.013313,0.040475,0.000112,7.269898,8.512434,3706,False,4,0.0

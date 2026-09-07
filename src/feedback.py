@@ -20,10 +20,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Sequence
 
+import numpy as np
+
 
 EVENT_TYPES = frozenset({
     "click", "like", "dislike", "skip", "dwell_seconds",
 })
+REPLAY_SCHEMA_VERSION = 2
 _DEFAULT_EVENT_VALUES = {
     "click": 1.0,
     "like": 1.0,
@@ -462,12 +465,67 @@ class FeedbackStore:
         rows = []
         for candidate in candidates:
             row = dict(candidate)
+            row["schema_version"] = REPLAY_SCHEMA_VERSION
             events = grouped[(row["recommendation_id"], int(row["movie_id"]))]
             row["impressed"] = row.pop("impressed_at") is not None
             row["feedback"] = events
             row["reward"] = feedback_reward(events) if row["impressed"] else None
             rows.append(row)
         return rows
+
+
+def validate_replay_rows(rows: Sequence[dict]) -> dict:
+    """Validate immutable candidate-level exposure rows before OPE/export."""
+    if not rows:
+        raise FeedbackValidationError("replay dataset is empty")
+    required = {
+        "recommendation_id", "movie_id", "candidate_rank",
+        "behavior_propensity", "impressed", "reward",
+    }
+    grouped_movies: dict[str, set[int]] = defaultdict(set)
+    grouped_ranks: dict[str, set[int]] = defaultdict(set)
+    impressed = 0
+    schema_versions = set()
+    for index, row in enumerate(rows):
+        missing = required - set(row)
+        if missing:
+            raise FeedbackValidationError(
+                f"replay row {index} missing fields: {sorted(missing)}")
+        recommendation_id = str(row["recommendation_id"])
+        movie_id = int(row["movie_id"])
+        rank = int(row["candidate_rank"])
+        propensity = float(row["behavior_propensity"])
+        if movie_id in grouped_movies[recommendation_id]:
+            raise FeedbackValidationError(
+                f"duplicate movie {movie_id} in recommendation {recommendation_id}")
+        if rank in grouped_ranks[recommendation_id]:
+            raise FeedbackValidationError(
+                f"duplicate candidate_rank {rank} in recommendation {recommendation_id}")
+        if rank <= 0:
+            raise FeedbackValidationError("candidate_rank must be positive")
+        if not 0.0 <= propensity <= 1.0:
+            raise FeedbackValidationError(
+                "behavior_propensity must be between 0 and 1")
+        grouped_movies[recommendation_id].add(movie_id)
+        grouped_ranks[recommendation_id].add(rank)
+        is_impressed = bool(row["impressed"])
+        if is_impressed:
+            impressed += 1
+            if row["reward"] is None:
+                raise FeedbackValidationError(
+                    "impressed replay rows require a numeric reward")
+            float(row["reward"])
+        elif row["reward"] is not None:
+            raise FeedbackValidationError(
+                "unimpressed replay rows must have reward=null")
+        schema_versions.add(int(row.get("schema_version", 1)))
+    return {
+        "schema_versions": sorted(schema_versions),
+        "candidate_rows": len(rows),
+        "recommendations": len(grouped_movies),
+        "impressed_rows": impressed,
+        "impression_coverage": impressed / len(rows),
+    }
 
 
 def feedback_reward(events: Iterable[dict]) -> float:
@@ -659,6 +717,185 @@ def _evaluate_selected_policy(
     }, contributions
 
 
+def _outcome_feature_matrix(rows: Sequence[dict]) -> np.ndarray:
+    """Stable, treatment-free features for the OPE nuisance reward model."""
+    matrix = []
+    for row in rows:
+        rank = max(1, int(row.get("candidate_rank") or 1))
+        score = float(row.get("score") or 0.0)
+        genres = [
+            value for value in str(row.get("genres") or "").split("|")
+            if value]
+        buckets = [0.0] * 8
+        actor_buckets = [0.0] * 32
+        actor_genre_buckets = [0.0] * (len(actor_buckets) * len(buckets))
+        actor_key = row.get("user_id")
+        actor_bucket = (
+            int(actor_key) % len(actor_buckets)
+            if actor_key is not None
+            else sum(str(row.get("actor_id") or "__unknown__").encode("utf-8"))
+                 % len(actor_buckets))
+        actor_buckets[actor_bucket] = 1.0
+        for genre in genres:
+            # Python's built-in hash is process-randomized; byte sums keep the
+            # exported dataset reproducible without maintaining another genre map.
+            genre_bucket = sum(genre.encode("utf-8")) % len(buckets)
+            buckets[genre_bucket] = 1.0
+            actor_genre_buckets[
+                actor_bucket * len(buckets) + genre_bucket] = 1.0
+        matrix.append([
+            1.0,
+            score,
+            score * score,
+            1.0 / rank,
+            math.log1p(rank),
+            float(len(genres)),
+            *buckets,
+            *actor_buckets,
+            *actor_genre_buckets,
+        ])
+    return np.asarray(matrix, dtype=np.float64)
+
+
+def cross_fitted_outcome_predictions(
+    rows: Sequence[dict],
+    *,
+    folds: int = 5,
+    ridge: float = 1.0,
+    seed: int = 42,
+) -> tuple[dict[tuple[str, int], float], dict]:
+    """Fit out-of-fold ridge reward predictions by recommendation cluster.
+
+    Only impressed rows provide reward labels. All candidates receive a
+    prediction from a model that did not train on their recommendation. The
+    model never uses served/impressed indicators as features.
+    """
+    if not rows:
+        raise ValueError("dataset is empty")
+    if folds < 2:
+        raise ValueError("folds must be at least 2")
+    if ridge < 0:
+        raise ValueError("ridge must be non-negative")
+    keys = [
+        (str(row["recommendation_id"]), int(row["movie_id"])) for row in rows]
+    if len(set(keys)) != len(keys):
+        raise ValueError("candidate keys must be unique within the replay dataset")
+    features = _outcome_feature_matrix(rows)
+    # Standardizing covariates may use all X because it does not touch rewards.
+    mean = features[:, 1:].mean(axis=0)
+    std = features[:, 1:].std(axis=0)
+    std[std < 1e-9] = 1.0
+    features[:, 1:] = (features[:, 1:] - mean) / std
+    fold_ids = np.asarray([
+        (sum(str(row["recommendation_id"]).encode("utf-8")) + seed) % folds
+        for row in rows], dtype=np.int64)
+    observed = np.asarray([bool(row.get("impressed")) for row in rows])
+    rewards = np.asarray([
+        float(row.get("reward") or 0.0) for row in rows], dtype=np.float64)
+    if not observed.any():
+        raise ValueError("outcome model requires at least one impressed item")
+    global_mean = float(rewards[observed].mean())
+    lower = float(rewards[observed].min())
+    upper = float(rewards[observed].max())
+    predictions = np.full(len(rows), global_mean, dtype=np.float64)
+    fitted_folds = 0
+    for fold in range(folds):
+        target = fold_ids == fold
+        train = observed & ~target
+        if not target.any() or train.sum() < 2:
+            continue
+        x_train, y_train = features[train], rewards[train]
+        penalty = np.eye(features.shape[1], dtype=np.float64) * ridge
+        penalty[0, 0] = 0.0  # do not regularize the intercept
+        system = x_train.T @ x_train + penalty
+        rhs = x_train.T @ y_train
+        try:
+            weights = np.linalg.solve(system, rhs)
+        except np.linalg.LinAlgError:
+            weights = np.linalg.pinv(system) @ rhs
+        predictions[target] = features[target] @ weights
+        fitted_folds += 1
+    predictions = np.clip(predictions, lower, upper)
+    rmse = float(np.sqrt(np.mean(
+        (predictions[observed] - rewards[observed]) ** 2)))
+    return dict(zip(keys, predictions.tolist())), {
+        "estimator": "cross_fitted_ridge_reward_model_v1",
+        "folds_requested": folds,
+        "folds_fitted": fitted_folds,
+        "candidate_rows": len(rows),
+        "observed_reward_rows": int(observed.sum()),
+        "feature_count": int(features.shape[1]),
+        "ridge": ridge,
+        "oof_rmse_on_observed": rmse,
+        "prediction_range": [float(predictions.min()), float(predictions.max())],
+        "fallback": (
+            None if fitted_folds == folds
+            else "global observed mean used for folds without >=2 training rows"),
+    }
+
+
+def _evaluate_selected_policy_dr(
+    rows: Sequence[dict],
+    target_k: int,
+    policy_name: str,
+    selector,
+    outcome_predictions: dict[tuple[str, int], float],
+) -> tuple[dict, list[float]]:
+    """Item-inclusion doubly robust value for an additive slate reward."""
+    grouped: dict[str, list[dict]] = defaultdict(list)
+    for row in rows:
+        grouped[str(row["recommendation_id"])].append(row)
+    if not grouped:
+        raise ValueError("dataset is empty")
+    contributions = []
+    direct_contributions = []
+    residual_contributions = []
+    unsupported = 0
+    observed_target_items = 0
+    target_items = 0
+    for recommendation_id, candidates in grouped.items():
+        candidates.sort(key=lambda row: int(row["candidate_rank"]))
+        selected = selector(candidates, min(target_k, len(candidates)))
+        direct = 0.0
+        correction = 0.0
+        for row in selected:
+            target_items += 1
+            key = (recommendation_id, int(row["movie_id"]))
+            mu = float(outcome_predictions[key])
+            direct += mu
+            propensity = float(row["behavior_propensity"])
+            if propensity <= 0.0:
+                unsupported += 1
+                continue
+            if row.get("impressed"):
+                observed_target_items += 1
+                reward = float(row.get("reward") or 0.0)
+                correction += (reward - mu) / propensity
+        denominator = max(1, len(selected))
+        direct_contributions.append(direct / denominator)
+        residual_contributions.append(correction / denominator)
+        contributions.append((direct + correction) / denominator)
+    support_ok = unsupported == 0
+    return {
+        "estimator": "item_inclusion_doubly_robust_v1",
+        "target_policy": policy_name,
+        "recommendations": len(grouped),
+        "target_items": target_items,
+        "observed_target_items": observed_target_items,
+        "unsupported_target_items": unsupported,
+        "support_ok": support_ok,
+        "direct_method_reward_per_item": (
+            float(np.mean(direct_contributions)) if support_ok else None),
+        "residual_correction_per_item": (
+            float(np.mean(residual_contributions)) if support_ok else None),
+        "dr_reward_per_item": (
+            float(np.mean(contributions)) if support_ok else None),
+        "warning": (
+            None if support_ok else
+            "DR is not a license to extrapolate into zero-propensity actions"),
+    }, contributions
+
+
 def bootstrap_mean_interval(
     values: Sequence[float],
     *,
@@ -729,19 +966,21 @@ def compare_logged_policies(
     min_actors: int = 5,
     min_effective_sample_size: float = 100.0,
     min_impression_coverage: float = 0.95,
+    outcome_folds: int = 5,
+    outcome_ridge: float = 1.0,
     seed: int = 42,
 ) -> dict:
     """Formally gate baseline Top-k against a diversity-aware reranker."""
     baseline, baseline_values = _evaluate_selected_policy(
         rows,
         target_k,
-        f"deepfm_top_{target_k}",
+        f"scorer_top_{target_k}",
         lambda candidates, k: candidates[:k],
     )
     candidate, candidate_values = _evaluate_selected_policy(
         rows,
         target_k,
-        f"deepfm_diversity_top_{target_k}_w{diversity_weight:g}",
+        f"scorer_diversity_top_{target_k}_w{diversity_weight:g}",
         lambda candidates, k: diversity_rerank(
             candidates, k, diversity_weight),
     )
@@ -749,6 +988,22 @@ def compare_logged_policies(
         candidate_value - baseline_value
         for baseline_value, candidate_value
         in zip(baseline_values, candidate_values)
+    ]
+    outcome_predictions, outcome_diagnostics = cross_fitted_outcome_predictions(
+        rows, folds=outcome_folds, ridge=outcome_ridge, seed=seed)
+    baseline_dr, baseline_dr_values = _evaluate_selected_policy_dr(
+        rows, target_k, f"scorer_top_{target_k}",
+        lambda candidates, k: candidates[:k], outcome_predictions)
+    candidate_dr, candidate_dr_values = _evaluate_selected_policy_dr(
+        rows, target_k,
+        f"scorer_diversity_top_{target_k}_w{diversity_weight:g}",
+        lambda candidates, k: diversity_rerank(
+            candidates, k, diversity_weight),
+        outcome_predictions)
+    paired_dr_delta = [
+        candidate_value - baseline_value
+        for baseline_value, candidate_value
+        in zip(baseline_dr_values, candidate_dr_values)
     ]
     recommendation_actors = []
     seen_recommendations = set()
@@ -783,6 +1038,22 @@ def compare_logged_policies(
             samples=bootstrap_samples, confidence=confidence, seed=seed + 2)
         if support_ok else None
     )
+    dr_support_ok = baseline_dr["support_ok"] and candidate_dr["support_ok"]
+    dr_delta_interval = (
+        bootstrap_cluster_mean_interval(
+            paired_dr_delta, recommendation_actors,
+            samples=bootstrap_samples, confidence=confidence, seed=seed + 3)
+        if dr_support_ok else None)
+    baseline_dr["confidence_interval"] = (
+        bootstrap_cluster_mean_interval(
+            baseline_dr_values, recommendation_actors,
+            samples=bootstrap_samples, confidence=confidence, seed=seed + 4)
+        if baseline_dr["support_ok"] else None)
+    candidate_dr["confidence_interval"] = (
+        bootstrap_cluster_mean_interval(
+            candidate_dr_values, recommendation_actors,
+            samples=bootstrap_samples, confidence=confidence, seed=seed + 5)
+        if candidate_dr["support_ok"] else None)
     delta_mean = (
         sum(paired_delta) / len(paired_delta) if support_ok else None)
 
@@ -819,6 +1090,9 @@ def compare_logged_policies(
     return {
         "protocol": {
             "comparison": "paired item-inclusion IPS by recommendation",
+            "robustness_estimator": (
+                "cross-fitted item-inclusion doubly robust; reporting only, "
+                "formal gate remains pre-registered IPS"),
             "bootstrap_unit": "actor_id cluster",
             "confidence": confidence,
             "bootstrap_samples": bootstrap_samples,
@@ -837,6 +1111,19 @@ def compare_logged_policies(
         "paired_delta": {
             "ips_reward_per_item": delta_mean,
             "confidence_interval": delta_interval,
+        },
+        "doubly_robust_cross_check": {
+            "outcome_model": outcome_diagnostics,
+            "baseline": baseline_dr,
+            "candidate": candidate_dr,
+            "paired_delta": {
+                "dr_reward_per_item": (
+                    float(np.mean(paired_dr_delta)) if dr_support_ok else None),
+                "confidence_interval": dr_delta_interval,
+            },
+            "decision_role": (
+                "robustness cross-check only; estimator disagreement blocks "
+                "interpretation and requires more data/model diagnosis"),
         },
         "gate": {
             "formal_ready": ready,

@@ -6,14 +6,17 @@ import unittest
 from pathlib import Path
 
 from feedback import (
+    _evaluate_selected_policy_dr,
     bootstrap_mean_interval,
     bootstrap_cluster_mean_interval,
     compare_logged_policies,
+    cross_fitted_outcome_predictions,
     diversity_rerank,
     FeedbackStore,
     FeedbackValidationError,
     evaluate_top_k_policy,
     select_slate,
+    validate_replay_rows,
     write_jsonl,
 )
 
@@ -89,6 +92,7 @@ class FeedbackStoreTests(unittest.TestCase):
         observed = [row for row in rows if row["impressed"]]
         self.assertEqual(len(observed), 1)
         self.assertEqual(observed[0]["reward"], 1.0)
+        self.assertEqual(observed[0]["schema_version"], 2)
         self.assertIsNotNone(observed[0]["title"])
         self.assertIsNotNone(observed[0]["genres"])
         self.assertEqual(self.store.stats()["observed_ctr"], 1.0)
@@ -168,6 +172,10 @@ class ReplayEvaluationTests(unittest.TestCase):
         self.assertEqual(report["gate"]["decision"], "promote_candidate")
         self.assertGreater(
             report["paired_delta"]["confidence_interval"][0], 0.0)
+        self.assertIn("doubly_robust_cross_check", report)
+        self.assertEqual(
+            report["doubly_robust_cross_check"]["baseline"]["estimator"],
+            "item_inclusion_doubly_robust_v1")
 
     def test_formal_policy_gate_refuses_tiny_sample(self):
         rows = [{
@@ -217,6 +225,44 @@ class ReplayEvaluationTests(unittest.TestCase):
         self.assertIsNone(result["ips_reward_per_item"])
         self.assertIn("zero-propensity", result["warning"])
 
+    def test_doubly_robust_is_exact_with_a_perfect_outcome_model(self):
+        rows = [
+            {"recommendation_id": "a", "movie_id": 1, "candidate_rank": 1,
+             "behavior_propensity": 0.5, "impressed": True, "reward": 1.0},
+            {"recommendation_id": "b", "movie_id": 1, "candidate_rank": 1,
+             "behavior_propensity": 0.5, "impressed": False, "reward": None},
+        ]
+        predictions = {("a", 1): 1.0, ("b", 1): 1.0}
+        report, contributions = _evaluate_selected_policy_dr(
+            rows, 1, "target", lambda candidates, k: candidates[:k],
+            predictions)
+        self.assertEqual(contributions, [1.0, 1.0])
+        self.assertEqual(report["dr_reward_per_item"], 1.0)
+        self.assertEqual(report["residual_correction_per_item"], 0.0)
+
+    def test_cross_fitted_outcome_predictions_cover_every_candidate(self):
+        rows = []
+        for recommendation in range(8):
+            for movie in (1, 2):
+                rows.append({
+                    "recommendation_id": f"r-{recommendation}",
+                    "movie_id": movie,
+                    "candidate_rank": movie,
+                    "score": 1.0 / movie,
+                    "genres": "Drama" if movie == 1 else "Comedy",
+                    "impressed": movie == (recommendation % 2) + 1,
+                    "reward": float(movie == 1),
+                })
+        first, diagnostics = cross_fitted_outcome_predictions(
+            rows, folds=4, ridge=0.1, seed=9)
+        second, _ = cross_fitted_outcome_predictions(
+            rows, folds=4, ridge=0.1, seed=9)
+        self.assertEqual(first, second)
+        self.assertEqual(len(first), len(rows))
+        self.assertEqual(diagnostics["observed_reward_rows"], 8)
+        self.assertGreaterEqual(min(first.values()), 0.0)
+        self.assertLessEqual(max(first.values()), 1.0)
+
     def test_jsonl_writer_refuses_overwrite(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "data.jsonl"
@@ -224,6 +270,26 @@ class ReplayEvaluationTests(unittest.TestCase):
             self.assertEqual(json.loads(path.read_text()), {"x": 1})
             with self.assertRaises(FileExistsError):
                 write_jsonl([{"x": 2}], path)
+
+    def test_replay_schema_rejects_reward_without_impression(self):
+        rows = [{
+            "schema_version": 2, "recommendation_id": "a", "movie_id": 1,
+            "candidate_rank": 1, "behavior_propensity": 0.5,
+            "impressed": False, "reward": 1.0,
+        }]
+        with self.assertRaisesRegex(FeedbackValidationError, "reward=null"):
+            validate_replay_rows(rows)
+
+    def test_replay_schema_reports_dataset_profile(self):
+        rows = [{
+            "schema_version": 2, "recommendation_id": "a", "movie_id": 1,
+            "candidate_rank": 1, "behavior_propensity": 1.0,
+            "impressed": True, "reward": 0.0,
+        }]
+        profile = validate_replay_rows(rows)
+        self.assertEqual(profile["schema_versions"], [2])
+        self.assertEqual(profile["recommendations"], 1)
+        self.assertEqual(profile["impression_coverage"], 1.0)
 
 
 if __name__ == "__main__":

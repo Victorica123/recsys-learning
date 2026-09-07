@@ -18,15 +18,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REQUIRED = [
     "README.md", "项目导学.md", "REPORT.md", "app.py",
-    "feedback_app.py", "requirements.txt",
-    "data/ml-1m/ratings.dat", "checkpoints/sasrec_main.pt",
-    "checkpoints/two_tower.pt", "checkpoints/deepfm.pt",
+    "feedback_app.py", "requirements.txt", "uv.lock",
+    "artifacts/release_manifest.json",
+    "data/ml-1m/ratings.dat", "data/ml-1m/users.dat",
+    "data/ml-1m/movies.dat", "checkpoints/two_tower.pt",
 ]
 KEY_SCRIPTS = [
     "train_mf.py", "train_deepfm.py", "train_two_tower.py", "run_bandit.py",
     "train_sasrec.py", "train_dqn_rec.py", "train_pg_rec.py",
 ]
-PACKAGES = ["torch", "pandas", "numpy", "faiss-cpu", "streamlit"]
+PACKAGES = [
+    "torch", "pandas", "numpy", "faiss-cpu", "streamlit", "starlette",
+    "uvicorn", "gymnasium",
+]
 
 
 def csv_tail(path: Path) -> str | None:
@@ -46,6 +50,7 @@ def collect(check: bool) -> dict:
     source_paths = list((ROOT / "src").glob("*.py"))
     source_paths.extend((ROOT / "scripts").glob("*.py"))
     source_paths.extend((ROOT / "research_v2").rglob("*.py"))
+    source_paths.extend((ROOT / "research_v3").rglob("*.py"))
     source_paths.extend((ROOT / "tests").glob("*.py"))
     source_paths.append(ROOT / "app.py")
     source_paths.append(ROOT / "feedback_app.py")
@@ -75,7 +80,11 @@ def collect(check: bool) -> dict:
         "syntax": syntax,
         "logs": logs,
         "packages": packages,
-        "check_ok": all(required.values()) and all(v == "ok" for v in syntax.values()),
+        "python_ok": sys.version_info[:2] == (3, 12),
+        "check_ok": (
+            sys.version_info[:2] == (3, 12)
+            and all(required.values())
+            and all(v == "ok" for v in syntax.values())),
         "key_scripts": KEY_SCRIPTS,
     }
 
@@ -87,12 +96,24 @@ def main() -> int:
     parser.add_argument("--check", action="store_true", help="return non-zero when required assets or syntax are missing")
     parser.add_argument("--json", action="store_true", help="emit JSON for another agent/tool")
     parser.add_argument("--test", action="store_true", help="run the CPU-only unittest smoke suite in tests/ and return its exit code")
+    parser.add_argument("--release", action="store_true",
+                        help="verify uv.lock plus reference data/model hashes")
+    parser.add_argument("--release-profile", default="serve",
+                        choices=("serve", "research"))
     args = parser.parse_args()
     if args.test:
         import subprocess
         cmd = [sys.executable, "-m", "unittest", "discover", "-t", str(ROOT),
                "-s", str(ROOT / "tests"), "-v"]
         print(f"[recsys-learning smoke tests] {' '.join(cmd)}")
+        return subprocess.run(cmd, cwd=str(ROOT)).returncode
+    if args.release:
+        import subprocess
+        cmd = [
+            sys.executable, str(ROOT / "scripts" / "verify_release.py"),
+            "--profile", args.release_profile,
+        ]
+        print(f"[recsys-learning release check] {' '.join(cmd)}")
         return subprocess.run(cmd, cwd=str(ROOT)).returncode
     result = collect(args.check)
     if args.json:
@@ -101,6 +122,7 @@ def main() -> int:
         print("[recsys-learning startup]")
         print(f"root: {result['root']}")
         print(f"python: {result['python']}")
+        print(f"python_contract: {'PASS' if result['python_ok'] else 'FAIL (requires 3.12)'}")
         print(f"check: {'PASS' if result['check_ok'] else 'FAIL'}")
         missing = [p for p, ok in result["required"].items() if not ok]
         print("missing: " + (", ".join(missing) if missing else "none"))

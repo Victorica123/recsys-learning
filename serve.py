@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """推荐系统 REST API（Starlette + uvicorn，零新增依赖）。
 
-复用 `src/serving.py` 的 `Recommender`，把"双塔召回 → DeepFM 精排"流水线
+复用 `src/serving.py` 的 `Recommender`，把默认双塔 Top-K 与显式实验精排
 暴露成 HTTP 服务。模型只在进程启动时加载一次（常驻内存）。
 
 启动：
@@ -29,6 +29,7 @@
     GET /events/stats                → 反馈闭环数据画像
 """
 import asyncio
+import hmac
 import logging
 import os
 import sys
@@ -73,7 +74,10 @@ _METRICS_DIR = Path(os.environ.get(
 _FEEDBACK_DB = Path(os.environ.get(
     "RECSYS_FEEDBACK_DB", ROOT / "runtime" / "feedback" / "events.sqlite3"))
 _MODEL_VERSION = os.environ.get(
-    "RECSYS_MODEL_VERSION", "two-tower-deepfm-ml1m-v1")
+    "RECSYS_MODEL_VERSION", "two-tower-retrieval-ml1m-v2")
+_RANKING_POLICY = os.environ.get("RECSYS_RANKING_POLICY", "retrieval")
+_RANKER_CHECKPOINT = os.environ.get("RECSYS_RANKER_CHECKPOINT") or None
+_VERIFY_CHECKPOINT_HASHES = os.environ.get("RECSYS_VERIFY_CHECKPOINTS") == "1"
 _EXPLORATION_RATE = float(os.environ.get(
     "RECSYS_EXPLORATION_RATE", "0"))
 _EXPLORATION_POOL = max(
@@ -99,7 +103,10 @@ def get_recommender():
                 _METRICS.model_load_started()
                 started = time.perf_counter()
                 try:
-                    _MODEL["recommender"] = Recommender.load(ROOT)
+                    _MODEL["recommender"] = Recommender.load(
+                        ROOT, deepfm_ckpt=_RANKER_CHECKPOINT,
+                        ranking_policy=_RANKING_POLICY,
+                        verify_hashes=_VERIFY_CHECKPOINT_HASHES)
                 except Exception as exc:  # 产物缺失/权重损坏：交给各接口降级
                     _MODEL["error"] = f"{type(exc).__name__}: {exc}"
                     # 保留完整堆栈：只存 type+message 会让冷启动失败几乎无法排查。
@@ -147,7 +154,9 @@ async def _recommender_or_503():
 
 
 async def health(request: Request):
-    missing = check_artifacts(ROOT)
+    missing = check_artifacts(
+        ROOT, ranking_policy=_RANKING_POLICY,
+        deepfm_ckpt=_RANKER_CHECKPOINT)
     # 热路径只读取已经加载的单例，不竞争推理线程池令牌；因此即使准入
     # 槽位全满，健康探针仍能立即返回。仅冷启动时才在线程池执行重加载。
     rec = _MODEL["recommender"]
@@ -157,6 +166,7 @@ async def health(request: Request):
     return _json({
         "status": "ok" if rec is not None else "degraded",
         "model_loaded": rec is not None,
+        "ranking_policy": _RANKING_POLICY,
         "n_users": len(rec.list_users()) if rec else 0,
         "n_items": rec.n_items if rec else 0,
         "missing_artifacts": [rel for rel, _, _ in missing],
@@ -177,12 +187,15 @@ async def live(request: Request):
 
 async def ready(request: Request):
     rec = _MODEL["recommender"]
-    missing = check_artifacts(ROOT)
+    missing = check_artifacts(
+        ROOT, ranking_policy=_RANKING_POLICY,
+        deepfm_ckpt=_RANKER_CHECKPOINT)
     is_ready = rec is not None and not missing and _MODEL["error"] is None
     return _json({
         "status": "ready" if is_ready else "not_ready",
         "worker_pid": os.getpid(),
         "model_loaded": rec is not None,
+        "ranking_policy": _RANKING_POLICY,
         "missing_artifacts": [rel for rel, _, _ in missing],
         "load_error": _MODEL["error"],
     }, status=200 if is_ready else 503)
@@ -262,8 +275,9 @@ async def recommend(request: Request):
     if unavailable is not None:
         return unavailable
     try:
-        # 双塔召回 + DeepFM 精排是同步 CPU 计算，放线程池执行，让事件循环
-        # 可以同时接纳其他请求 —— 这也让准入闸门看得到真实并发。
+        # 双塔召回（以及显式启用时的实验精排）是同步 CPU 计算，放线程池
+        # 执行，让事件循环可以同时接纳其他请求 —— 这也让准入闸门看得到
+        # 真实并发。
         pool_size = max(k, _EXPLORATION_POOL) \
             if _EXPLORATION_RATE > 0.0 else k
         result = await run_in_threadpool(
@@ -278,8 +292,9 @@ async def recommend(request: Request):
     recommendation_id = uuid.uuid4().hex
     request_id = request.scope.get("recsys.request_id")
     policy_name = (
-        "epsilon_slate_v1" if _EXPLORATION_RATE > 0.0
-        else "deterministic_top_k_v1"
+        f"{_RANKING_POLICY}_epsilon_slate_v2"
+        if _EXPLORATION_RATE > 0.0
+        else f"{_RANKING_POLICY}_deterministic_top_k_v2"
     )
     try:
         await run_in_threadpool(
@@ -304,6 +319,8 @@ async def recommend(request: Request):
         "request_id": request_id,
         "user_id": result["user_id"],
         "model_version": _MODEL_VERSION,
+        "ranking_policy": result["ranking_policy"],
+        "score_type": result["score_type"],
         "policy_name": policy_name,
         "exploration_rate": _EXPLORATION_RATE,
         "n_candidates": result["n_candidates"],
@@ -474,7 +491,9 @@ class ApiKeyMiddleware:
             return
         headers = dict(scope.get("headers") or [])
         supplied = headers.get(b"x-api-key", b"").decode("latin-1")
-        if supplied == self.api_key:
+        # 常数时间比较：`==` 会在第一个不同字节处提前返回，理论上可被时序
+        # 侧信道逐字节爆破。compare_digest 是标准库自带，零成本。
+        if hmac.compare_digest(supplied, self.api_key):
             await self.app(scope, receive, send)
             return
         body = b'{"error":"missing or invalid X-API-Key","code":"unauthorized"}'
@@ -554,6 +573,18 @@ if __name__ == "__main__":
         "--model-version", default=_MODEL_VERSION,
         help="version written with every recommendation event")
     parser.add_argument(
+        "--ranking-policy", choices=("retrieval", "deepfm"),
+        default=_RANKING_POLICY,
+        help="retrieval=默认双塔 Top-K；deepfm=显式实验精排")
+    parser.add_argument(
+        "--ranker-checkpoint", default=_RANKER_CHECKPOINT,
+        help="--ranking-policy deepfm 时使用的可选 ranker 权重")
+    parser.add_argument(
+        "--verify-checkpoint-hashes", action="store_true",
+        default=_VERIFY_CHECKPOINT_HASHES,
+        help="启动前按 release_manifest.json 校验已登记权重的 size+SHA-256；"
+             "从零训练复现时不要开启（会因自训权重未登记而启动失败）")
+    parser.add_argument(
         "--exploration-rate", type=float, default=_EXPLORATION_RATE,
         help="epsilon mixture for uniform slate exploration (default: 0)")
     parser.add_argument(
@@ -579,6 +610,8 @@ if __name__ == "__main__":
         parser.error("--exploration-rate must be between 0 and 1")
     if args.exploration_pool <= 0:
         parser.error("--exploration-pool must be positive")
+    if args.ranker_checkpoint and args.ranking_policy != "deepfm":
+        parser.error("--ranker-checkpoint requires --ranking-policy deepfm")
 
     # 通过环境变量把配置传给（可能是子进程重新 import 的）worker。
     os.environ["RECSYS_MAX_IN_FLIGHT"] = str(args.max_in_flight)
@@ -586,6 +619,10 @@ if __name__ == "__main__":
     os.environ["RECSYS_RATE_LIMIT_BURST"] = str(args.rate_burst)
     os.environ["RECSYS_METRICS_INTERVAL_S"] = str(args.metrics_interval)
     os.environ["RECSYS_MODEL_VERSION"] = args.model_version
+    os.environ["RECSYS_RANKING_POLICY"] = args.ranking_policy
+    os.environ["RECSYS_RANKER_CHECKPOINT"] = args.ranker_checkpoint or ""
+    os.environ["RECSYS_VERIFY_CHECKPOINTS"] = (
+        "1" if args.verify_checkpoint_hashes else "")
     os.environ["RECSYS_EXPLORATION_RATE"] = str(args.exploration_rate)
     os.environ["RECSYS_EXPLORATION_POOL"] = str(args.exploration_pool)
     os.environ["RECSYS_API_KEY"] = args.api_key or ""

@@ -1,0 +1,2 @@
+window,train_frac,model,seed,test_users,recall@10,recall@10_ci95,ndcg@10,mrr@10,catalog_coverage@10,long_tail_share@10,avg_log_popularity@10,novelty_bits@10,candidate_catalog_size,sampled_negatives
+1,0.8,two_tower,42,252,0.063492,"[0.035714, 0.095238]",0.035549,0.026729,0.115219,0.015079,6.819968,8.993086,3706,False

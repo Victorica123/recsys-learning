@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "release_id": "p0-trustworthy-default-2026-08-15",
+  "python_minor": "3.12",
+  "environment_lock": {
+    "path": "uv.lock",
+    "sha256": "87f36b5a1e23f347170ca98de9fe16b2fdc18778de158b74b65e9a1837fa94bf"
+  },
+  "profiles": {
+    "serve": [
+      "ml1m_ratings",
+      "ml1m_users",
+      "ml1m_movies",
+      "two_tower_default"
+    ],
+    "research": [
+      "ml1m_ratings",
+      "ml1m_users",
+      "ml1m_movies",
+      "two_tower_default",
+      "deepfm_failure_reproduction",
+      "sasrec_simulator",
+      "deepfm_rerank_v6_oof"
+    ]
+  },
+  "artifacts": {
+    "ml1m_ratings": {
+      "path": "data/ml-1m/ratings.dat",
+      "bytes": 24594131,
+      "sha256": "506d64ca44484487c11dc2d9a28de5c54948213e6b96285e298afe28d6ea4e0f",
+      "role": "MovieLens-1M observed rating events",
+      "source": "https://files.grouplens.org/datasets/movielens/ml-1m.zip"
+    },
+    "ml1m_users": {
+      "path": "data/ml-1m/users.dat",
+      "bytes": 134368,
+      "sha256": "1dc3a95300cb19f7c10e027daf29b8cdf1d908dab65b5edfb45950aa389a10a3",
+      "role": "MovieLens-1M user metadata",
+      "source": "https://files.grouplens.org/datasets/movielens/ml-1m.zip"
+    },
+    "ml1m_movies": {
+      "path": "data/ml-1m/movies.dat",
+      "bytes": 171308,
+      "sha256": "0140fc2356357c1a851d0f52e893a1e4d3696df632c4141cea8d5bc3d621f0b9",
+      "role": "MovieLens-1M item metadata",
+      "source": "https://files.grouplens.org/datasets/movielens/ml-1m.zip"
+    },
+    "two_tower_default": {
+      "path": "checkpoints/two_tower.pt",
+      "bytes": 1039585,
+      "sha256": "d1a2b931534b895622d0807223a9b86bc18a9fce88c69959e43f4367f5206f24",
+      "role": "promoted default retrieval checkpoint",
+      "task": "leave-one-out top-k retrieval",
+      "trained_by": "src/train_two_tower.py"
+    },
+    "deepfm_failure_reproduction": {
+      "path": "checkpoints/deepfm.pt",
+      "bytes": 704977,
+      "sha256": "946fe87b5601d0c3152833325ea5c8c4de8b5d12a3194ac91253c3d345e3d538",
+      "role": "explicit failure-reproduction ranker; never the default",
+      "task": "positive_rating_prediction",
+      "label": "rating >= 4 conditional on an observed rating",
+      "is_ctr": false,
+      "trained_by": "src/train_deepfm.py"
+    },
+    "sasrec_simulator": {
+      "path": "checkpoints/sasrec_main.pt",
+      "bytes": 4847381,
+      "sha256": "7fb96e0646fb45bf0a1a2408b0137017cbf180ebcd009064cd67844c4774ba44",
+      "role": "frozen user model for sequence/RL simulator research",
+      "task": "next-item prediction",
+      "trained_by": "src/train_sasrec.py"
+    },
+    "deepfm_rerank_v6_oof": {
+      "path": "checkpoints/deepfm_rerank_v6.pt",
+      "bytes": 709819,
+      "sha256": "a2695c7c9005416c17af9de8c874e99089cd721e07b1494f2e14ed75bf1e4282",
+      "role": "best experimental reranker; explicit failure-reproduction research only",
+      "task": "retrieval-aligned residual listwise reranker (v6, 4-fold OOF features)",
+      "trained_by": "src/train_reranker.py --tag v6 --loss listwise --residual --oof-folds 4"
+    }
+  }
+}
