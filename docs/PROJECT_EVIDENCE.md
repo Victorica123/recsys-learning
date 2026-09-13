@@ -1,6 +1,7 @@
 # 项目指标与证据索引
 
 面试中只使用下面可复查的数字。不同数据集和协议的结果不得直接横向比较。
+主线是以 MovieLens 验证的视频 / 内容推荐；企业种子指标单列为可选迁移实验。
 
 | 结论 | 数值 | 协议/边界 | 证据 |
 |---|---:|---|---|
@@ -8,9 +9,9 @@
 | DeepFM | AUC 0.754 | ML-1M 已评分样本中 `rating>=4` 的时间切分分类；**非 CTR** | `experiments/deepfm_log.csv` |
 | DeepFM | **user-level GAUC 0.735** | 同上；1108 用户参与、91.6% 覆盖 | `src/train_deepfm.py --model deepfm` |
 | 双塔召回 | Recall@10 0.098 | ML-1M 校正评估，**leave-one-out（有时间穿越）** | `figures/08-双塔召回对比.png` |
-| **端到端 召回50→精排10** | **Recall@10 0.065** | 线上真实链路，3552 用户 leave-one-out | `experiments/eval_end_to_end_v0-ci.json` |
+| **端到端 召回50→精排10** | **Recall@10 0.065** | 被测服务路径的离线评估，3552 用户 leave-one-out | `experiments/eval_end_to_end_v0-ci.json` |
 | **精排增量（原版 v0）** | **−0.0329，CI [−0.0445, −0.0220]** | 配对 bootstrap，**显著劣于不精排** | 同上 |
-| **精排增量（重训 v6，最优）** | **−0.0037，CI [−0.0132, +0.0053]** | 区间跨 0 = **与不精排持平，未晋升**；缺口补回 88.7% | `experiments/eval_end_to_end_rerank-v6.json` |
+| **精排增量（重训 v6，最优）** | **−0.0037，CI [−0.0132, +0.0053]** | 区间跨 0，**未证明优于不精排，未晋升**；缺口补回 88.7% | `experiments/eval_end_to_end_rerank-v6.json` |
 | **当前默认服务策略** | **双塔 Top-K，不加载精排器** | `ranking_policy=retrieval`；DeepFM/v6 只可显式实验启用 | `src/serving.py`, `tests/test_serving.py` |
 | **残差门学到了什么** | `w_retrieval` 19.65 / `gate` **−1.22**（6.2%） | 模型自学结论="基本照抄召回"，且把 DeepFM 分量当**惩罚项** | `checkpoints/deepfm_rerank_v6.pt` |
 | **双塔（全局时间切分）** | **Recall@10 0.0691 [0.0553, 0.0847]** | 无时间穿越；1157 测试用户、31 冷启动剔除 | `experiments/eval_split_protocols_protocol-v1.json` |
@@ -38,6 +39,16 @@
 | 自动化测试 | 以 `--test` 实际输出为准 | CPU-only；集成测试需显式开启 | `scripts/ai_startup_harness.py --test` |
 | **权重供应链** | `weights_only=True` 强制执行；开启 `--verify-checkpoint-hashes` 后 manifest SHA-256 不匹配启动失败 | 未登记实验权重仍禁 pickle 白名单外对象；`--release` 为离线硬校验 | `src/checkpoint_io.py`、`tests/test_checkpoint_io.py` |
 
+## 可选企业迁移实验
+
+这组种子描述企业知识场景，保留为独立的迁移练习。它不代表视频曝光、播放或广告点击。
+
+| 结论 | 数值 | 协议/边界 | 证据 |
+|---|---:|---|---|
+| 企业知识种子复现 | 4 租户、40 用户、136 文档、640 请求、5,870 事件 | 完全合成；所有源 JSONL 哈希匹配；不是客户使用量 | [来源与哈希](../artifacts/enterprise_seed_provenance.json) |
+| 企业三基线对照 | NDCG@5 0.2959 / 0.8875 / 0.8949 | 相同 152 条测试请求、相同原始 16 项候选池；时间/热度、BM25、混合排序；未晋升 | [参考结果](../artifacts/enterprise_pilot_reference.json) |
+| 企业反馈回放 | 重复导入新增请求/事件均为 0 | 通用 item_type/id/version；租户/工作区/主体与事件血缘校验；SQLite 仅用于本地 | [接入契约](ENTERPRISE_RECOMMENDATION.md)、[种子审计](../notes/21-企业知识推荐-种子审计与业务迁移.md) |
+
 ## 可展示图表
 
 - `figures/08-双塔召回对比.png`：评估修正前后。
@@ -52,8 +63,9 @@
 ## 不能合并的指标
 
 - AUC 与 Recall@K 不同。
-- **分段指标与端到端指标不同**：双塔 Recall@10 0.098 与 DeepFM AUC 0.754
-  都不代表链路质量；线上真实链路是 0.065（原版）/ 0.094（v6，最优）。
+- **单模型指标与组合链路指标不同**：双塔 Recall@10 0.098 与 DeepFM AUC 0.754
+  不能用来推断串联效果。相同留一协议下，原精排链路为 0.065、v6 为 0.094；
+  当前默认双塔直接推荐为 0.098。这些是离线评估，不是线上业务收益。
 - **leave-one-out 与全局时间切分不同**：0.098 vs 0.069，区间不重叠。引用召回
   指标时必须带协议名，否则等于挑了好看的那个。
 - ML-1M 与 ML-25M 不同。

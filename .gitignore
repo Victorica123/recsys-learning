@@ -34,6 +34,7 @@ runtime/
 
 # ---- 本地实验与临时输出 ----
 experiments/*.json
+experiments/enterprise_pilot_*/
 *.log
 
 # ---- 编辑器 / 系统 ----

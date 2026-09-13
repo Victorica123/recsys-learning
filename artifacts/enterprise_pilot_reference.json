@@ -1,0 +1,316 @@
+{
+  "business_logging_cohorts": {
+    "cohorts": {
+      "test/recency_popularity_v1/synthetic_ranker_2026_01": {
+        "cite_per_impression": 0.07368421052631578,
+        "complete_per_created_action": 0.25,
+        "create_action_per_impression": 0.010526315789473684,
+        "dismiss_per_impression": 0.09210526315789473,
+        "open_per_impression": 0.25,
+        "save_per_impression": 0.05263157894736842,
+        "unique_item_impressions": 380
+      },
+      "test/semantic_hybrid_v1/synthetic_ranker_2026_01": {
+        "cite_per_impression": 0.2894736842105263,
+        "complete_per_created_action": 0.6875,
+        "create_action_per_impression": 0.042105263157894736,
+        "dismiss_per_impression": 0.007894736842105263,
+        "open_per_impression": 0.6631578947368421,
+        "save_per_impression": 0.15,
+        "unique_item_impressions": 380
+      },
+      "train/recency_popularity_v1/synthetic_ranker_2026_01": {
+        "cite_per_impression": 0.07239263803680981,
+        "complete_per_created_action": 0.7777777777777778,
+        "create_action_per_impression": 0.011042944785276074,
+        "dismiss_per_impression": 0.11779141104294479,
+        "open_per_impression": 0.2331288343558282,
+        "save_per_impression": 0.0392638036809816,
+        "unique_item_impressions": 815
+      },
+      "train/semantic_hybrid_v1/synthetic_ranker_2026_01": {
+        "cite_per_impression": 0.26049382716049385,
+        "complete_per_created_action": 0.7894736842105263,
+        "create_action_per_impression": 0.04691358024691358,
+        "dismiss_per_impression": 0.0,
+        "open_per_impression": 0.682716049382716,
+        "save_per_impression": 0.1728395061728395,
+        "unique_item_impressions": 810
+      },
+      "validation/recency_popularity_v1/synthetic_ranker_2026_01": {
+        "cite_per_impression": 0.06419753086419754,
+        "complete_per_created_action": 1.0,
+        "create_action_per_impression": 0.009876543209876543,
+        "dismiss_per_impression": 0.11358024691358025,
+        "open_per_impression": 0.24691358024691357,
+        "save_per_impression": 0.04938271604938271,
+        "unique_item_impressions": 405
+      },
+      "validation/semantic_hybrid_v1/synthetic_ranker_2026_01": {
+        "cite_per_impression": 0.2682926829268293,
+        "complete_per_created_action": 0.7,
+        "create_action_per_impression": 0.024390243902439025,
+        "dismiss_per_impression": 0.0024390243902439024,
+        "open_per_impression": 0.6707317073170732,
+        "save_per_impression": 0.16829268292682928,
+        "unique_item_impressions": 410
+      }
+    },
+    "completion_caveat": "late action outcomes are right-censored at observation_end",
+    "events_after_observation_end": 1,
+    "interpretation": "synthetic descriptive cohorts; repeated events count once per item/request",
+    "observation_end": "2026-04-01T09:00:00+00:00"
+  },
+  "dataset": {
+    "actors": 40,
+    "events": 5870,
+    "items": 136,
+    "name": "enterprise_knowledge_recommendation_synthetic_pilot",
+    "requests": 640,
+    "seed": 20260913,
+    "source_sha256": {
+      "events.jsonl": "61a0598d9684f1b86946439fa209ab84e480f08f5b226fb749e4c32195e18f22",
+      "ground_truth.jsonl": "91e4fae9743c24b52fe27ca5f8243d387881fcafbac44c8ee9415d8e008107c9",
+      "items.jsonl": "d77d54e95d2f5c9f16a2b12f129beded39dc061cca6db043cbea84d0f282f3fc",
+      "recommendations.jsonl": "a8d8a84b69f5898a774d25c8a3db7424ee9474fd0ffaa5bb2ad43546b4989eaa",
+      "relations.jsonl": "0a6ab4c3fbc1a8213860325c7544dc836eee67fc17e60c48b8da4cba1d800acf",
+      "tenants.jsonl": "3570389961d72b2ba2d12723113c45cdbce88fdf54a784447f3bd1df70c5e3fa",
+      "users.jsonl": "740fbba6f852ce7256fb6d2c228159c8c9ce1f1c627042792bd8802cfa41481c"
+    },
+    "split_counts": {
+      "test": 152,
+      "train": 325,
+      "validation": 163
+    },
+    "tenants": 4
+  },
+  "decision": {
+    "next_step": "collect authorized real pilot feedback; keep content baselines as candidates",
+    "real_business_lift": null,
+    "status": "not_promoted_synthetic_only",
+    "train_two_tower": false
+  },
+  "off_policy_support": {
+    "reason": "synthetic outcomes, actor confounding, zero propensities and preselected pools",
+    "status": "do_not_estimate_business_lift",
+    "target_positions": {
+      "baseline_v0": 3200,
+      "hybrid_v1": 3200,
+      "semantic_v1": 3200
+    },
+    "unsupported_target_positions": {
+      "baseline_v0": 1396,
+      "hybrid_v1": 1133,
+      "semantic_v1": 1186
+    }
+  },
+  "offline_paired": {
+    "test": {
+      "baseline_v0": {
+        "judged_catalog_coverage": 0.3387096774193548,
+        "mrr_at_5": 0.4959429824561404,
+        "ndcg_at_5": 0.2958914824358198,
+        "recall_at_5": 0.2940293441938179,
+        "requests": 152,
+        "requests_without_relevant_target": 0
+      },
+      "hybrid_v1": {
+        "judged_catalog_coverage": 0.8548387096774194,
+        "mrr_at_5": 0.9789473684210527,
+        "ndcg_at_5": 0.8949192622514474,
+        "recall_at_5": 0.720655806182122,
+        "requests": 152,
+        "requests_without_relevant_target": 0
+      },
+      "semantic_v1": {
+        "judged_catalog_coverage": 0.8951612903225806,
+        "mrr_at_5": 0.9802631578947368,
+        "ndcg_at_5": 0.8875165140844674,
+        "recall_at_5": 0.6622911445279867,
+        "requests": 152,
+        "requests_without_relevant_target": 0
+      }
+    },
+    "train": {
+      "baseline_v0": {
+        "judged_catalog_coverage": 0.6397058823529411,
+        "mrr_at_5": 0.45056410256410256,
+        "ndcg_at_5": 0.2763249539525662,
+        "recall_at_5": 0.2679401709401709,
+        "requests": 325,
+        "requests_without_relevant_target": 0
+      },
+      "hybrid_v1": {
+        "judged_catalog_coverage": 0.9485294117647058,
+        "mrr_at_5": 0.9944615384615384,
+        "ndcg_at_5": 0.9058527652556096,
+        "recall_at_5": 0.7045982905982906,
+        "requests": 325,
+        "requests_without_relevant_target": 0
+      },
+      "semantic_v1": {
+        "judged_catalog_coverage": 0.9705882352941176,
+        "mrr_at_5": 0.9979487179487179,
+        "ndcg_at_5": 0.9117983742467249,
+        "recall_at_5": 0.6668437118437118,
+        "requests": 325,
+        "requests_without_relevant_target": 0
+      }
+    },
+    "validation": {
+      "baseline_v0": {
+        "judged_catalog_coverage": 0.36507936507936506,
+        "mrr_at_5": 0.48404907975460126,
+        "ndcg_at_5": 0.29386076015303003,
+        "recall_at_5": 0.30444054922582525,
+        "requests": 163,
+        "requests_without_relevant_target": 0
+      },
+      "hybrid_v1": {
+        "judged_catalog_coverage": 0.8809523809523809,
+        "mrr_at_5": 0.9840490797546012,
+        "ndcg_at_5": 0.8985864833389806,
+        "recall_at_5": 0.7076930567728114,
+        "requests": 163,
+        "requests_without_relevant_target": 0
+      },
+      "semantic_v1": {
+        "judged_catalog_coverage": 0.9206349206349206,
+        "mrr_at_5": 0.9851738241308794,
+        "ndcg_at_5": 0.8905701208018304,
+        "recall_at_5": 0.6462094653812445,
+        "requests": 163,
+        "requests_without_relevant_target": 0
+      }
+    }
+  },
+  "paired_ndcg_deltas": {
+    "test": {
+      "hybrid_minus_baseline": 0.5990277798156275,
+      "semantic_minus_baseline": 0.5916250316486475
+    },
+    "train": {
+      "hybrid_minus_baseline": 0.6295278113030434,
+      "semantic_minus_baseline": 0.6354734202941588
+    },
+    "validation": {
+      "hybrid_minus_baseline": 0.6047257231859506,
+      "semantic_minus_baseline": 0.5967093606488004
+    }
+  },
+  "protocol": {
+    "candidate_scope": "same upstream logged pool for every policy and request",
+    "content_scorer": "BM25 over text/tags; semantic_v1 is not a neural embedding model",
+    "history_source": "training-cohort events, occurred_at < min(request time, train_end)",
+    "history_weights": {
+      "cite": 3.0,
+      "complete_action": 4.0,
+      "create_action": 4.0,
+      "open": 1.0,
+      "save": 1.0
+    },
+    "hyperparameters": "fixed before evaluating; no test-set tuning",
+    "inference": "descriptive synthetic validation only; no real-business significance claims",
+    "k": 5,
+    "label_source": "synthetic_rule_v1; observed ground truth only",
+    "ranker_excludes": [
+      "topic IDs",
+      "preferred_topics",
+      "popularity_prior",
+      "upstream scores/features/ranks",
+      "ground truth"
+    ],
+    "test_start_inclusive": "2026-03-17T09:00:00+00:00",
+    "train_end_exclusive": "2026-03-02T09:00:00+00:00"
+  },
+  "replay_store": {
+    "counts": {
+      "candidates": 10240,
+      "events": 5870,
+      "requests": 640
+    },
+    "first_import": {
+      "events_added": 5870,
+      "requests_added": 640
+    },
+    "repeat_import": {
+      "events_added": 0,
+      "requests_added": 0
+    }
+  },
+  "run": {
+    "code_sha256": {
+      "enterprise_dataset.py": "1f58a7a116f4aff9d689d861de95afed884a5ead8982d575f6115628ee71516c",
+      "enterprise_evaluation.py": "b37fa7f166185686ea15fa65ca692b0743369404262094e1eb5a4ccef4322d0f",
+      "enterprise_feedback.py": "feed0a70e2a7b04fa8f3c34d64e62198e3e95f37839c46cae6be4dae8d8138f5",
+      "enterprise_recommendation.py": "f57eeac0aac4f938787d2141bfb6c49f701eb0803fb99cce6d30d2aa9103f03f",
+      "enterprise_seed.py": "f9e440982233b18196a71e798e3d906acf930e59c80a89ce0dca989a9fff404a"
+    },
+    "created_at": "2026-09-13T16:24:36.804220+00:00",
+    "tag": "enterprise-seed-20260914-v1"
+  },
+  "schema_version": 1,
+  "source_audit": {
+    "deterministic_request_fraction": 0.8,
+    "findings": [
+      "Upstream policies preselect different top-16 pools, not the complete authorized catalog.",
+      "Upstream policy assignment is confounded with actor identity.",
+      "Oracle labels and upstream topic-match scores share the same synthetic rules.",
+      "Most logged requests have zero propensity outside their deterministic top-k.",
+      "Membership and role grants are static in this fixture; dynamic grants need real snapshots."
+    ],
+    "latest_allowed_training_event": "2026-03-01T18:48:16Z",
+    "mean_logged_pool_fraction_of_authorized_catalog": 0.5373655913978495,
+    "train_cohort_events_censored_from_features": 1,
+    "upstream_actors_per_policy": {
+      "recency_popularity_v1": 20,
+      "semantic_hybrid_v1": 20
+    },
+    "upstream_shared_actors_between_policies": 0
+  },
+  "synthetic": true,
+  "upstream_logged_slates_not_a_paired_experiment": {
+    "test/recency_popularity_v1": {
+      "mrr_at_5": 0.47192982456140353,
+      "ndcg_at_5": 0.2798803946708989,
+      "recall_at_5": 0.31688596491228066,
+      "requests": 76,
+      "requests_without_relevant_target": 0
+    },
+    "test/semantic_hybrid_v1": {
+      "mrr_at_5": 0.9741228070175438,
+      "ndcg_at_5": 0.9667984751172064,
+      "recall_at_5": 0.7842522974101921,
+      "requests": 76,
+      "requests_without_relevant_target": 0
+    },
+    "train/recency_popularity_v1": {
+      "mrr_at_5": 0.3216768916155419,
+      "ndcg_at_5": 0.23955526011404074,
+      "recall_at_5": 0.2799444931346772,
+      "requests": 163,
+      "requests_without_relevant_target": 0
+    },
+    "train/semantic_hybrid_v1": {
+      "mrr_at_5": 0.9938271604938271,
+      "ndcg_at_5": 0.9927635272911359,
+      "recall_at_5": 0.7548770331177739,
+      "requests": 162,
+      "requests_without_relevant_target": 0
+    },
+    "validation/recency_popularity_v1": {
+      "mrr_at_5": 0.4339506172839506,
+      "ndcg_at_5": 0.26068555066708166,
+      "recall_at_5": 0.3228101116990006,
+      "requests": 81,
+      "requests_without_relevant_target": 0
+    },
+    "validation/semantic_hybrid_v1": {
+      "mrr_at_5": 0.9939024390243902,
+      "ndcg_at_5": 0.9858318139786506,
+      "recall_at_5": 0.7816056910569106,
+      "requests": 82,
+      "requests_without_relevant_target": 0
+    }
+  }
+}

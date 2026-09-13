@@ -1,0 +1,86 @@
+{
+  "source": "User-provided ChatGPT conversation: 网页端能力对比 (2026-09-13)",
+  "archive": "enterprise-recsys-synthetic-pilot.zip",
+  "archive_sha256": "17442406b57af4ba80bbb671126c636931df27be7ad283731b95141d433953d8",
+  "original_generator_sha256": "275549bca52d91302f23a22c031410e0ac27ddc1a16c671039e16a4b625aa2bf",
+  "synthetic": true,
+  "upstream_manifest": {
+    "dataset": "enterprise_knowledge_recommendation_synthetic_pilot",
+    "event_counts": {
+      "cite": 544,
+      "complete_action": 61,
+      "create_action": 81,
+      "dismiss": 181,
+      "impression": 3200,
+      "open": 1465,
+      "save": 338
+    },
+    "files": {
+      "events.jsonl": {
+        "rows": 5870,
+        "sha256": "61a0598d9684f1b86946439fa209ab84e480f08f5b226fb749e4c32195e18f22"
+      },
+      "ground_truth.jsonl": {
+        "rows": 640,
+        "sha256": "91e4fae9743c24b52fe27ca5f8243d387881fcafbac44c8ee9415d8e008107c9"
+      },
+      "items.jsonl": {
+        "rows": 136,
+        "sha256": "d77d54e95d2f5c9f16a2b12f129beded39dc061cca6db043cbea84d0f282f3fc"
+      },
+      "recommendations.jsonl": {
+        "rows": 640,
+        "sha256": "a8d8a84b69f5898a774d25c8a3db7424ee9474fd0ffaa5bb2ad43546b4989eaa"
+      },
+      "relations.jsonl": {
+        "rows": 104,
+        "sha256": "0a6ab4c3fbc1a8213860325c7544dc836eee67fc17e60c48b8da4cba1d800acf"
+      },
+      "tenants.jsonl": {
+        "rows": 4,
+        "sha256": "3570389961d72b2ba2d12723113c45cdbce88fdf54a784447f3bd1df70c5e3fa"
+      },
+      "users.jsonl": {
+        "rows": 40,
+        "sha256": "740fbba6f852ce7256fb6d2c228159c8c9ce1f1c627042792bd8802cfa41481c"
+      }
+    },
+    "generated_at": "deterministic-build-no-wall-clock",
+    "request_count": 640,
+    "seed": 20260913,
+    "split_counts": {
+      "test": 152,
+      "train": 325,
+      "validation": 163
+    },
+    "synthetic": true,
+    "time_range": {
+      "end": "2026-04-01T09:00:00Z",
+      "start": "2026-01-01T09:00:00Z"
+    },
+    "version": "1.0.0"
+  },
+  "public_references": [
+    {
+      "title": "OpenID Connect Core 1.0",
+      "url": "https://openid.net/specs/openid-connect-core-1_0.html",
+      "used_for": "身份认证、ID Token、Claims 场景的事实校准；未复制规范原文"
+    },
+    {
+      "title": "RFC 7519: JSON Web Token (JWT)",
+      "url": "https://www.rfc-editor.org/rfc/rfc7519",
+      "used_for": "JWT、签发者、受众、过期时间等术语校准；未复制规范原文"
+    },
+    {
+      "title": "OWASP Authorization Cheat Sheet",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html",
+      "used_for": "最小权限、逐请求授权和对象级访问控制测试场景；未复制页面原文"
+    },
+    {
+      "title": "OpenTelemetry Signals",
+      "url": "https://opentelemetry.io/docs/concepts/signals/",
+      "used_for": "trace、metric、log 等可观测性业务场景校准；未复制页面原文"
+    }
+  ],
+  "adaptation": "Preserve generated JSONL bytes; require new output directory; remove recursive deletion."
+}

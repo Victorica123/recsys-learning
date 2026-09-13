@@ -14,6 +14,170 @@ Codex is taking over the implementation and research work previously produced by
 
 ## Likely Next Tasks
 
+### Current handoff: cross-device GitHub snapshot (2026-09-14)
+
+- User requested committing and pushing the current project changes for use
+  on other devices. Destination: `origin/main` at
+  `https://github.com/Victorica123/recsys-learning.git`.
+  Base before this snapshot: `946a3da`; identify the snapshot via Git history.
+- Contents: restored video/content recommendation guides, concise AI
+  full-stack interview materials, and the preserved optional enterprise seed
+  generator, offline pipeline, tests and reference evidence.
+- Startup `.venv/Scripts/python.exe scripts/ai_startup_harness.py --check`
+  PASS. The enterprise source hashes still match the already-tested reference
+  in `artifacts/enterprise_pilot_reference.json`; prior full `--test` passed
+  with the existing opt-in integration skips. No runtime source changed
+  after that verification.
+- New documentation links were checked against files included in Git. The
+  enterprise example is generated locally by the documented pilot command;
+  its guide no longer links to an ignored local result on GitHub.
+- Data, checkpoints, virtual environments and runtime databases remain
+  excluded by `.gitignore`. On another device, pull `main` and follow
+  `docs/MOVIELENS_GUIDE.md` for environment/data/model setup. The optional
+  enterprise pilot generates its own seed using the standard library.
+- Earlier references below to uncommitted work describe historical state;
+  use `git status` and `git log` for the current checkout.
+
+### Completed: video/content recommendation mainline (2026-09-14)
+
+- Latest user correction: this is a video/content recommendation project,
+  not an enterprise knowledge recommendation project. Restore this domain
+  while retaining the AI full-stack job target and concise learning style.
+  Success means consistent entry pages, interview material and future-agent
+  instructions, with existing implementations and experiments preserved.
+- Main story: user preferences -> recommendations -> UI/API -> exposure and
+  feedback -> evaluation. Current data is MovieLens movie ratings; search,
+  ad bidding and short-video behavior integration are not completed features.
+  The original enterprise seed remains a valid, separate scenario exercise;
+  do not relabel its events as video plays or make it the default roadmap.
+- Rewritten concise entries: `README.md`, `项目导学.md`,
+  `docs/INTERVIEW_PLAYBOOK.md`, `docs/INTERVIEW_STUDY_MAP.md`.
+  Prior enterprise material is retained in `docs/ENTERPRISE_PILOT_GUIDE.md`,
+  `docs/ENTERPRISE_INTERVIEW_NOTES.md`, `docs/ENTERPRISE_STUDY_MAP.md`.
+- Aligned persistent instructions: `AGENTS.md` and
+  `docs/AI_STARTUP_HARNESS.md`. Adjusted the entry sections of
+  `docs/MOVIELENS_GUIDE.md`, `docs/INTERVIEW_DEEP_DIVE.md` and
+  `docs/PROJECT_EVIDENCE.md`; enterprise evidence is explicitly optional.
+- No runtime code, model weights, seed files or experiment results were
+  changed by this positioning correction. Preserve all earlier uncommitted
+  enterprise work. Default service remains `ranking_policy=retrieval`.
+  Streamlit calls the shared Python core directly; the feedback page is a
+  separate entry, and Faiss currently uses exact `IndexFlatIP` retrieval.
+- Verification (2026-09-14):
+  `.venv/Scripts/python.exe scripts/ai_startup_harness.py --check` PASS.
+  Local Markdown links/fences/details PASS across 15 documents and 97 links.
+  `git diff --check` PASS; only an existing LF/CRLF notice for `.gitignore`.
+- Default-retrieval smoke PASS: from the repo root, add `src` to Python's
+  module path and run
+  `Recommender.load(verify_hashes=True).recommend(1, k=10, n_candidates=50)`.
+  Checkpoint hashes verified; returned 10 recommendations with
+  `ranking_policy=retrieval`. No training, service startup or feedback writes.
+- Positioning correction is complete. No new model or feature work is pending
+  for this request; preserve the current uncommitted changes for user review.
+- Future work should deepen the video/content application only when requested.
+  Optional enterprise live integration is not the default next task. Keep
+  algorithm detail out of the first-pass introduction and avoid industry-wide
+  value rankings unsupported by evidence.
+
+### Historical: enterprise-first onboarding (superseded above, 2026-09-14)
+
+The following records the earlier enterprise-first direction. Its default
+domain and next-step recommendations are superseded by the user's correction.
+
+- Latest user preference: primarily seeking AI full-stack application roles.
+  Updated the interview guide and study map to prioritize user flows, UI/API
+  contracts, permissions/data, knowledge retrieval, LLM application integration
+  and reliability. Training algorithms/RL are supporting topics.
+  Existing UI/API features are MovieLens; enterprise components are offline.
+  The recommended next product step is existing-platform UI/API integration;
+  RAG generation and streaming are future work, not implemented features here.
+- User clarification: the seeded enterprise data is intended for realistic
+  scenario processing, learning and interviews. It is sufficient for this
+  development exercise; actual user benefit remains a separate evidence
+  question. Avoid turning production maturity into a prerequisite for this task.
+- Completed: shortened `README.md`, `项目导学.md`, and
+  `docs/INTERVIEW_PLAYBOOK.md`. The default story is permissions, relevance
+  and feedback, with one run command and an actual seeded recommendation.
+  Metrics and algorithm details are optional reading.
+- Interview follow-up: `docs/INTERVIEW_STUDY_MAP.md` maps permissions,
+  transactions, idempotency, text ranking, metrics and temporal evaluation
+  to study keywords, example questions, short answers and verified code
+  entry points. The concise interview guide links to it; algorithm,
+  engineering and RL extensions are explicitly optional by target role.
+- Preserved full learning/interview material in
+  `docs/MOVIELENS_LEARNING_PATH.md` and `docs/INTERVIEW_DEEP_DIVE.md`;
+  corrected stale path and simulator/production claims during the move.
+  Course and MovieLens guide navigation now points to the concise entry pages.
+- No runtime code, model weights or existing experiment results changed.
+  The prior enterprise reference source hashes still match current code.
+- Verification: `.venv/Scripts/python.exe scripts/enterprise_pilot.py --tag
+  onboarding-check-20260914-v1` PASS. The new run matches the reference test
+  metrics and the documented 31-candidate / 5-displayed example; repeated
+  feedback import adds zero rows. Output:
+  `experiments/enterprise_pilot_onboarding-check-20260914-v1/`.
+- Startup `--check`, local Markdown links, code-fence/details balance and
+  `git diff --check` PASS. The guide's `my-first-run` tag remains unused for
+  the user. Documentation-only changes do not require retraining.
+- Preference for future work: keep beginner/interview explanations concise,
+  introduce terms only as needed, and preserve deeper material for follow-up.
+  No further documentation work is pending; enterprise live integration
+  remains a separate future task.
+
+### Completed optional extension: enterprise knowledge pilot (2026-09-14)
+
+- User objective: study the web ChatGPT advice and generated enterprise seed,
+  then implement the applicable improvements in this repository. Completed
+  scope: seed reproduction/import, authorized portable ranking, generic
+  feedback replay, fair offline comparisons and concrete integration artifacts.
+- Actual workspace is `D:\Vibe Coding\machine  learning\recsys-learning`;
+  older absolute paths in external skill text are stale. Initial Git tree
+  was clean at `946a3da`; preserve the current uncommitted implementation.
+- Source: `enterprise-recsys-synthetic-pilot.zip`; provenance and original
+  manifest are pinned in `artifacts/enterprise_seed_provenance.json`.
+  Downloaded original data is under `data/enterprise_seed_original/data/`.
+  The adapted `src/enterprise_seed.py` reproduces JSONL hashes and refuses
+  existing output directories instead of deleting them.
+- Runtime code: `src/enterprise_recommendation.py` is portable standard
+  library code; the sibling dataset/feedback/evaluation modules and
+  `scripts/enterprise_pilot.py` provide the offline pipeline. `Principal`
+  must come from trusted server identity/workspace state. Candidate ACL and
+  temporal version filtering precede text extraction and BM25 statistics.
+- Upstream audit: disjoint policy user cohorts (20 each, zero overlap);
+  policy-dependent top-16 pools cover only 53.7% of the authorized catalog;
+  synthetic score/label rules overlap; 80% of requests lack exploration.
+  One delayed train-cohort event is censored from features by occurred_at.
+- Same-request/same-pool test NDCG@5: baseline 0.2959, BM25 0.8875,
+  hybrid 0.8949. This is synthetic validation only, with no formal OPE
+  lift or production promotion. The current decision is
+  `not_promoted_synthetic_only`; no new enterprise two-tower was trained.
+- Generic SQLite requests/candidates/events import atomically; same-content
+  retries add zero rows, conflicting IDs fail, feedback requires a matching
+  impression/item version and action completions require action lineage.
+  This local store is not an EIP production database.
+- Verification: `.venv/Scripts/python.exe -m unittest
+  tests.test_enterprise_recommendation tests.test_enterprise_dataset
+  tests.test_enterprise_evaluation -v`; startup harness `--check` and
+  `--test`. Reference metrics and run provenance live in
+  `artifacts/enterprise_pilot_reference.json`.
+- Final verification (2026-09-14): startup `--check` PASS; full CPU `--test`
+  PASS with the existing real-checkpoint integration opt-ins skipped;
+  `scripts/verify_release.py --profile research` PASS for the lock and all
+  pinned MovieLens/TwoTower/DeepFM/SASRec/v6 artifacts. Full test output:
+  `runtime/enterprise-tests-20260914-v1.log`.
+- Final original-data run:
+  `.venv/Scripts/python.exe scripts/enterprise_pilot.py --dataset
+  data/enterprise_seed_original/data --tag enterprise-seed-20260914-v1` PASS.
+  Outputs: `experiments/enterprise_pilot_enterprise-seed-20260914-v1/`;
+  source and artifact SHA-256 checks pass. Earlier smoke and 20260913
+  runs are retained for audit, not the current reference.
+- At pilot completion the README led with the enterprise scenario; the latest
+  correction restores video/content recommendation. The pilot is now entered
+  through `docs/ENTERPRISE_PILOT_GUIDE.md`. Full MovieLens reproduction
+  remains at `docs/MOVIELENS_GUIDE.md`, with commands run from the repo root.
+- Optional enterprise product work would be in EIP: integrate Agent Service
+  authorization/MySQL/React events and collect a small real pilot. This turn
+  does not claim live enterprise integration or real business gains.
+
 1. ~~Improve reproducibility: seed control, config capture, and a single experiment manifest.~~ **DONE (2026-07-22)**
 2. ~~Harden the Streamlit demo for missing/corrupt checkpoints and empty candidate sets.~~ **DONE (2026-07-23)**
 3. ~~Add automated smoke tests for data loaders, metric functions, and RL environment transitions without GPU/external services.~~ **DONE (2026-07-23)**

@@ -3,23 +3,52 @@
 Use this page as the compact project cache for a new coding model (including Kimi K3).
 Run ` .venv/Scripts/python.exe scripts/ai_startup_harness.py --check` first; it prints a shorter machine-readable summary.
 
+Human entry points: `README.md` -> `项目导学.md` -> `docs/INTERVIEW_PLAYBOOK.md`.
+These emphasize video/content recommendation with MovieLens movie ratings:
+user preferences -> recommendations -> UI/API -> feedback -> evaluation.
+Full MovieLens learning and interview material lives
+in `docs/MOVIELENS_LEARNING_PATH.md` and `docs/INTERVIEW_DEEP_DIVE.md`.
+The user wants concise onboarding/interview explanations and primarily seeks
+AI full-stack application development roles. `docs/INTERVIEW_STUDY_MAP.md`
+prioritizes UI/API flows, vector recommendation, feedback, reliability and
+evaluation; deeper models and RL are optional.
+The enterprise seed is a preserved migration exercise, not the main domain.
+Synthetic data is valid for scenario development; real-user benefit is a
+separate evidence question. Do not relabel that seed as video behavior.
+
 ## Project In One Sentence
 
-An educational but runnable MovieLens recommendation stack: offline data exploration and matrix factorization, explicit positive-rating ranking with CTR-style LR/FM/DeepFM architectures (not real CTR), two-tower + Faiss retrieval, contextual bandits, SASRec sequence recommendation, and simulated-session RL for long-term satisfaction, exposed through a Streamlit demo.
+A video/content recommendation prototype using MovieLens ratings, with
+two-tower/Faiss retrieval, a shared inference core for Streamlit and HTTP,
+exposure/feedback collection and reproducible evaluation; sequence models,
+simulated-session RL and enterprise migration are optional extensions.
+Within search/advertising/recommendation, the implemented application is the
+recommendation part. Video keyword search and ad bidding are future work.
 
 ## Architecture
 
 ```text
-MovieLens-1M/25M
-  -> preprocessing and leave-one-out/negative-sampling protocols
-  -> MF baseline | DeepFM ranking | TwoTower retrieval + Faiss | Bandit
-  -> SASRec user model
-  -> RecSimEnv (fatigue + churn) -> Double DQN / REINFORCE Actor-Critic
-  -> checkpoints/, experiments/, figures/, REPORT.md, app.py
+MovieLens movie ratings
+  -> TwoTower + Faiss IndexFlatIP -> filter rated items -> Top-K
+  -> shared Recommender -> Streamlit page / independent HTTP API
+  -> separate feedback page / event APIs -> replay and policy evaluation
+
+Research extensions
+  -> MF / DeepFM / SASRec / Bandit / simulated-session RL
+  -> checkpoints/, experiments/, figures/, REPORT.md
+
+Optional enterprise synthetic seed
+  -> scoped/versioned candidates + generic event replay
+  -> BM25/content baselines + paired temporal evaluation
+  -> portable artifacts (live EIP integration is separate future work)
 ```
 
 ## Current Completed State
 
+- Mainline positioning restored (2026-09-14): README, concise onboarding,
+  interview guide and study map lead with video/content recommendation.
+  Enterprise guides are retained under `docs/ENTERPRISE_*.md`. The current
+  default is two-tower Top-K; core code, weights and experiments are preserved.
 - Phase 1 complete: MF Recall@10 0.062; DeepFM positive-rating AUC 0.754 (rating>=4 among observed ratings, temporal split, user-level GAUC 0.735; MovieLens has no impression labels, so this is not CTR); two-tower corrected Recall@10 0.098; LinUCB online-simulation CTR 0.704.
 - **Funnel evaluation complete (2026-08-15) - read this before touching the ranker**: the *former* served path (recall 50 -> DeepFM -> Top-10) scores Recall@10 0.065 versus 0.098 for no reranking at all, CI [-0.0445, -0.0220]. Root cause is sample selection bias (Top-10 distinct items collapse 1853 -> 773). Five retraining versions in `src/train_reranker.py` closed 88.7% of the gap; the best (v6, residual-from-retrieval + 4-fold cross-fitted features) reaches 0.0943 with CI [-0.0132, +0.0053] - statistically tied with no reranking, so it was **not** promoted. The current default is two-tower Top-10. The residual gate itself settled at 6% of the retrieval weight *and negative*, i.e. the model learned to copy retrieval and penalise the DeepFM signal: **an information problem, not an implementation problem**. See `notes/15-端到端评估与精排重建.md`.
 - Evaluation protocol comparison (2026-08-15): the headline Recall@10 0.098 uses leave-one-out, which permits time travel across users. A global time split scores 0.0691 [0.0553, 0.0847] versus 0.0980 [0.0884, 0.1075], intervals disjoint. Both are reported with the difference labelled; leave-one-out stays primary for comparability. `train_two_tower.py --split time`, `scripts/eval_split_protocols.py`.
@@ -135,11 +164,32 @@ MovieLens-1M/25M
   interview-safe accuracy.
 - Existing artifacts are authoritative evidence: `checkpoints/`, `experiments/`, `figures/`, `REPORT.md`, and `research/研究报告.md`.
 
+## Optional Enterprise Migration
+
+The synthetic pilot is complete (2026-09-14): the supplied seed reproduces
+JSONL hashes (4 tenants, 40 actors, 136 items, 640 requests, 5,870 events).
+Scope/item-version/event contracts, atomic idempotent replay and a portable
+standard-library ranker are implemented. Authorization precedes text statistics;
+delayed outcomes beyond the cutoff cannot enter training features.
+On the same 152 test requests and logged top-16 pools, NDCG@5 is
+0.2959 / 0.8875 / 0.8949 for recency-popularity / BM25 / hybrid.
+These are synthetic conditional-pool metrics, not full-catalog retrieval or
+business lift. Decision: `not_promoted_synthetic_only`; no enterprise training.
+
+Start with `docs/ENTERPRISE_PILOT_GUIDE.md`; contracts and evidence are in
+`docs/ENTERPRISE_RECOMMENDATION.md`, `notes/21`, and
+`artifacts/enterprise_pilot_reference.json`. Reproduce with
+`scripts/enterprise_pilot.py --tag <unique-tag>` (no GPU/network/ML weights).
+Live EIP routes/MySQL/React integration is separate future work, not the next
+default task for this video/content recommendation project.
+
 ## Fast Orientation
 
 | Need | Read/run |
 |---|---|
-| Explain the project | `项目导学.md`, then `REPORT.md` |
+| Run the main content recommendation demo | `.venv/Scripts/python.exe -m streamlit run app.py` |
+| Explain the project / prepare AI full-stack interviews | `项目导学.md`, `docs/INTERVIEW_PLAYBOOK.md`, `docs/INTERVIEW_STUDY_MAP.md` |
+| Full MovieLens reproduction guide | `docs/MOVIELENS_GUIDE.md` (commands run from repository root) |
 | Learn the stack from scratch (beginner) | `docs/从零到懂-课程浓缩指南.md`（数学→ML→DL→推荐→RL→对齐→面试，含 60+ 术语词典） |
 | Reproduce sequence model | `src/train_sasrec.py`; `research/研究报告.md` |
 | Debug RL | `src/train_dqn_rec.py`, `src/train_pg_rec.py`, `notes/09-手写DQN与策略梯度.md` |
@@ -156,6 +206,7 @@ MovieLens-1M/25M
 | Run Semantic-ID generative retrieval | `scripts/benchmark_generative_retrieval.py --tag <unique-tag> --seeds 42,43,44` |
 | Collect real human feedback | `streamlit run feedback_app.py --server.port 8502` |
 | Check current files/dependencies | `scripts/ai_startup_harness.py --check`, `requirements.txt` |
+| Optional enterprise seed exercise | `docs/ENTERPRISE_PILOT_GUIDE.md`; `scripts/enterprise_pilot.py --tag <unique-tag>` |
 
 ## Safe Commands
 
