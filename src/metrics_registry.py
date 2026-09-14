@@ -116,6 +116,9 @@ def aggregate_snapshots(snapshots: list[dict]) -> dict:
             for value in runtime.get("event_loop_lag_samples_ms", []))
         workers.append({
             "pid": (snapshot.get("process") or {}).get("pid"),
+            "requests_total": int(requests.get("total", 0)),
+            "route_counts": {path: int(stats.get("count", 0))
+                             for path, stats in (snapshot.get("routes") or {}).items()},
             "uptime_s": snapshot.get("uptime_s"),
             "model_loaded": bool(model.get("loaded")),
             "cpu_percent": runtime.get("cpu_percent"),

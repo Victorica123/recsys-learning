@@ -57,6 +57,16 @@ class AggregateTests(unittest.TestCase):
         self.assertEqual(aggregate["rate_limit"]["rejected_total"], 1)
         self.assertEqual(aggregate["runtime"]["rss_bytes_sum"], 3000)
 
+    def test_worker_route_counts_distinguish_probes_from_recommendations(self):
+        business = worker_snapshot(101, 200, 10, 1000)
+        probe = worker_snapshot(202, 200, 2, 1000)
+        probe["routes"]["/ready"] = probe["routes"].pop("/recommend")
+        workers = aggregate_snapshots([business, probe])["workers"]
+        by_pid = {worker["pid"]: worker for worker in workers}
+        self.assertEqual(by_pid[101]["route_counts"]["/recommend"], 1)
+        self.assertEqual(by_pid[202]["requests_total"], 1)
+        self.assertEqual(by_pid[202]["route_counts"].get("/recommend", 0), 0)
+
     def test_prometheus_contains_core_operational_metrics(self):
         aggregate = aggregate_snapshots([
             worker_snapshot(101, 200, 10, 1000)])

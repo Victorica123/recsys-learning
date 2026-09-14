@@ -10,6 +10,7 @@ import argparse
 import http.client
 import json
 import math
+import os
 import re
 import statistics
 import threading
@@ -69,12 +70,36 @@ def _target(parts, path: str) -> str:
     return prefix + path
 
 
+def request_headers(extra: dict | None = None) -> dict:
+    """Read credentials at request time; never serialize them in run reports."""
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    if os.environ.get("RECSYS_API_KEY"):
+        headers["X-API-Key"] = os.environ["RECSYS_API_KEY"]
+    headers.update(extra or {})
+    return headers
+
+
+def request_json(base_url: str, path: str, *, method: str = "GET",
+                 json_body: dict | None = None, timeout: float = 30,
+                 headers: dict | None = None) -> tuple[int, dict, dict]:
+    parts = urlsplit(base_url)
+    conn = _connection(parts, timeout)
+    body = None if json_body is None else json.dumps(json_body).encode()
+    try:
+        conn.request(method, _target(parts, path), body=body,
+                     headers=request_headers(headers))
+        response = conn.getresponse()
+        raw = response.read()
+        return response.status, json.loads(raw), dict(response.getheaders())
+    finally:
+        conn.close()
+
+
 def fetch_json(base_url: str, path: str, timeout: float) -> dict | None:
     parts = urlsplit(base_url)
     conn = _connection(parts, timeout)
     try:
-        conn.request("GET", _target(parts, path),
-                     headers={"Accept": "application/json"})
+        conn.request("GET", _target(parts, path), headers=request_headers())
         response = conn.getresponse()
         body = response.read()
         if response.status != 200:
@@ -86,20 +111,25 @@ def fetch_json(base_url: str, path: str, timeout: float) -> dict | None:
         conn.close()
 
 
-def run_warmup(base_url: str, path: str, count: int, timeout: float) -> None:
+def run_warmup(base_url: str, path: str, count: int, timeout: float, *,
+               method: str = "GET", json_body: dict | None = None,
+               headers: dict | None = None) -> None:
     if count <= 0:
         return
     parts = urlsplit(base_url)
     conn = _connection(parts, timeout)
+    body = None if json_body is None else json.dumps(json_body).encode()
     try:
         for index in range(count):
             request_id = f"warmup-{index}-{uuid.uuid4().hex[:12]}"
             try:
-                conn.request("GET", _target(parts, path), headers={
+                conn.request(method, _target(parts, path), body=body, headers=request_headers({
                     "Accept": "application/json",
                     "Connection": "keep-alive",
+                    "X-Actor-ID": "load-warmup",
                     "X-Request-ID": request_id,
-                })
+                    **(headers or {}),
+                }))
                 conn.getresponse().read()
             except OSError:
                 conn.close()
@@ -109,9 +139,12 @@ def run_warmup(base_url: str, path: str, count: int, timeout: float) -> None:
 
 
 def run_load(base_url: str, path: str, requests: int, concurrency: int,
-             timeout: float) -> tuple[list[dict], float]:
+             timeout: float, *, method: str = "GET",
+             json_body: dict | None = None,
+             headers: dict | None = None) -> tuple[list[dict], float]:
     parts = urlsplit(base_url)
     target = _target(parts, path)
+    body = None if json_body is None else json.dumps(json_body).encode()
     workers = min(concurrency, requests)
     counts = [requests // workers] * workers
     for index in range(requests % workers):
@@ -126,11 +159,13 @@ def run_load(base_url: str, path: str, requests: int, concurrency: int,
             request_id = f"load-{worker_id}-{index}-{uuid.uuid4().hex[:12]}"
             started = time.perf_counter()
             try:
-                conn.request("GET", target, headers={
+                conn.request(method, target, body=body, headers=request_headers({
                     "Accept": "application/json",
                     "Connection": "keep-alive",
+                    "X-Actor-ID": "load-benchmark",
                     "X-Request-ID": request_id,
-                })
+                    **(headers or {}),
+                }))
                 response = conn.getresponse()
                 response.read()
                 rows.append({
@@ -138,6 +173,7 @@ def run_load(base_url: str, path: str, requests: int, concurrency: int,
                     "latency_ms": (time.perf_counter() - started) * 1000,
                     "correlation_ok": response.getheader("X-Request-ID")
                     == request_id,
+                    "error_class": response.getheader("X-Error-Class"),
                 })
             except (OSError, http.client.HTTPException) as exc:
                 rows.append({
@@ -186,6 +222,9 @@ def summarize(rows: list[dict], wall_s: float) -> dict:
         "success_throughput_rps": (
             round(successes / wall_s, 3) if wall_s else None),
         "status_counts": dict(sorted(status_counts.items())),
+        "error_class_counts": dict(sorted(Counter(
+            row["error_class"] for row in rows if row.get("error_class")
+        ).items())),
         "exception_counts": dict(sorted(exception_counts.items())),
         "correlation_failures": sum(
             1 for row in rows if not row["correlation_ok"]),
@@ -228,7 +267,10 @@ def safe_tag(value: str) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
-    parser.add_argument("--path", default=DEFAULT_PATH)
+    parser.add_argument("--path", default=None)
+    parser.add_argument("--method", choices=("GET", "POST"), default="GET")
+    parser.add_argument("--json", dest="json_text", default=None,
+                        help="POST JSON object; defaults to user_id=1, k=10")
     parser.add_argument("--requests", type=int, default=200)
     parser.add_argument("--concurrency", type=int, default=8)
     parser.add_argument("--warmup", type=int, default=10)
@@ -239,6 +281,15 @@ def main() -> int:
         "--max-p99-ms", type=float, default=None,
         help="optional p99 latency budget; disabled when omitted")
     args = parser.parse_args()
+    args.path = args.path or (
+        "/v1/recommendations" if args.method == "POST" else DEFAULT_PATH)
+    try:
+        body = json.loads(args.json_text) if args.json_text else (
+            {"user_id": 1, "k": 10} if args.method == "POST" else None)
+    except json.JSONDecodeError:
+        parser.error("--json must be valid JSON")
+    if body is not None and (not isinstance(body, dict) or args.method != "POST"):
+        parser.error("--json requires a POST request with a JSON object")
 
     if args.requests <= 0 or args.concurrency <= 0 or args.warmup < 0:
         parser.error("requests/concurrency must be positive; warmup cannot be negative")
@@ -256,11 +307,15 @@ def main() -> int:
     if output.exists():
         parser.error(f"refusing to overwrite existing artifact: {output}")
 
-    run_warmup(args.base_url, args.path, args.warmup, args.timeout)
-    metrics_before = fetch_json(args.base_url, "/metrics", args.timeout)
+    traffic_headers = {"X-Actor-ID": f"load-{run_tag}"}
+    request_options = {"method": args.method, "json_body": body,
+                       "headers": traffic_headers}
+    run_warmup(args.base_url, args.path, args.warmup, args.timeout, **request_options)
+    metrics_before = fetch_json(args.base_url, "/metrics/aggregate", args.timeout)
     rows, wall_s = run_load(
-        args.base_url, args.path, args.requests, args.concurrency, args.timeout)
-    metrics_after = fetch_json(args.base_url, "/metrics", args.timeout)
+        args.base_url, args.path, args.requests, args.concurrency, args.timeout,
+        **request_options)
+    metrics_after = fetch_json(args.base_url, "/metrics/aggregate", args.timeout)
     summary = summarize(rows, wall_s)
     report = {
         "schema_version": 1,
@@ -268,6 +323,9 @@ def main() -> int:
         "config": {
             "base_url": args.base_url,
             "path": args.path,
+            "method": args.method,
+            "json_body": body,
+            "traffic_kind": "scripted_load",
             "requests": args.requests,
             "concurrency": args.concurrency,
             "warmup": args.warmup,
@@ -278,6 +336,7 @@ def main() -> int:
             "before": metrics_before,
             "after": metrics_after,
             "delta": metrics_delta(metrics_before, metrics_after),
+            "note": "Worker snapshots are periodic; client response counts are authoritative.",
         },
     }
     output.parent.mkdir(parents=True, exist_ok=True)

@@ -18,7 +18,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REQUIRED = [
     "README.md", "项目导学.md", "REPORT.md", "app.py",
-    "feedback_app.py", "requirements.txt", "uv.lock",
+    "feedback_app.py", "serve.py", "web/index.html", "src/api_contract.py",
+    "Dockerfile", "compose.yaml", "scripts/demo_recommendation_flow.py",
+    "requirements.txt", "uv.lock",
     "artifacts/release_manifest.json",
     "data/ml-1m/ratings.dat", "data/ml-1m/users.dat",
     "data/ml-1m/movies.dat", "checkpoints/two_tower.pt",

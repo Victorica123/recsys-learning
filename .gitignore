@@ -27,6 +27,8 @@ checkpoints/
 runtime/
 .cache/
 .tmp/
+.playwright-cli/
+output/playwright/
 *.sqlite3
 *.sqlite3-wal
 *.sqlite3-shm

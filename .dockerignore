@@ -8,6 +8,8 @@ checkpoints
 experiments
 figures
 runtime
+.playwright-cli
+output
 research
 research_v2
 research_v3

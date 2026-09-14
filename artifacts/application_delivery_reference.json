@@ -1,0 +1,759 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-14T07:57:06.418277+00:00",
+  "scope": "MovieLens video/content recommendation application delivery",
+  "traffic_kind": "scripted_qa_only",
+  "real_user_feedback": false,
+  "web_review": {
+    "conversation_title": "评审改进路线",
+    "pull_request": "https://github.com/Victorica123/recsys-learning/pull/1",
+    "integrated_base_commit": "ad0d4eda649ca3f5f389ede71684efc2f396f3c5",
+    "remote_ci_independently_verified": false
+  },
+  "source_hash_format": "sha256 of UTF-8 source normalized to LF",
+  "source_sha256_utf8_lf": {
+    "Dockerfile": "56c61b55f70a50516adc96d17eae8c6b6a9e68b6d52675a4a0d68e68b9004f4a",
+    "compose.yaml": "f477e716a75c34849e7db1d01b98bdc6b8c5d03bb0bdf42f1a25043f235f9fb8",
+    "serve.py": "8bd6c33661d1549e6304651c50c4abe2cd65a59cdd28fc397db36c60687c04bf",
+    "src/api_contract.py": "c5e92920aecdef6ede68fee77f412dba086d8c3cec841d2bda56b91862affa4a",
+    "src/metrics_registry.py": "e01a7da4e12aabc93535e0467bc5b8b2b40285ba4c6048af100973d998077f9e",
+    "web/index.html": "ce9f880afcd9570ca6855f1749ca4e0e6e51d360e53aa16eb5b71e87512cf6c1",
+    "scripts/ai_startup_harness.py": "65aa42d9bed9a8d2c0cab8d90ae67f8cc3de35a04953512833c191152d6f9c30",
+    "scripts/demo_recommendation_flow.py": "352e2da4e7e48ac30fa7c3f7bbc5fa6c75dcad2eecf24d83be41d4a271003e03",
+    "scripts/load_test_api.py": "05a34869f9e4c3628dec5b8f0cd5ae22d76e7e2a38672e40b69dd7f1f4d83068",
+    "scripts/production_smoke.py": "61f26395fbbb4bdbc0d99218a3631338a16e37a1f370cc615305d569901b15ea",
+    "tests/test_api_contract.py": "dadbad5dc17f475c690a63466efba376f56662cb8544d0212d60fd5eca96dffc",
+    "tests/test_load_testing.py": "d65e7688ac6651393e84cb843138d9c680fc375cba326a3d9b7f80952d6005af",
+    "tests/test_metrics_registry.py": "9f73df32c12504f2152e040bc9dd3e9cd16a98fb4be7e306cac2ef3d63a7d54e"
+  },
+  "runtime": {
+    "uid": 999,
+    "python": "3.12.14",
+    "torch": "2.9.1+cpu",
+    "cuda_available": false,
+    "source_sha256_utf8_lf": {
+      "serve.py": "8bd6c33661d1549e6304651c50c4abe2cd65a59cdd28fc397db36c60687c04bf",
+      "web/index.html": "ce9f880afcd9570ca6855f1749ca4e0e6e51d360e53aa16eb5b71e87512cf6c1",
+      "src/api_contract.py": "c5e92920aecdef6ede68fee77f412dba086d8c3cec841d2bda56b91862affa4a",
+      "src/metrics_registry.py": "e01a7da4e12aabc93535e0467bc5b8b2b40285ba4c6048af100973d998077f9e"
+    },
+    "container": {
+      "image": "sha256:8bb84eab49060af8cda4cb3e871401d1b419f8f5de0f06d2129414480517e47b",
+      "user": "recsys",
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/app/data",
+          "Type": "bind",
+          "RW": false
+        },
+        {
+          "Destination": "/app/checkpoints",
+          "Type": "bind",
+          "RW": false
+        },
+        {
+          "Destination": "/app/runtime",
+          "Type": "volume",
+          "RW": true
+        }
+      ]
+    },
+    "engine": {
+      "cpus": 6,
+      "memory_bytes": 16771678208,
+      "os_type": "linux",
+      "architecture": "x86_64"
+    },
+    "client": "Windows host -> Docker Desktop Linux, HTTP localhost:8860",
+    "sqlite": "WAL on a named Docker runtime volume",
+    "dependencies": "Pinned direct versions; container transitive dependencies are resolved by pip, not uv.lock."
+  },
+  "checks": {
+    "scripted_flow": true,
+    "external_production_smoke": true,
+    "container_non_root_cpu_only": true,
+    "container_source_matches_workspace": true,
+    "browser_identical_retry_payload": true,
+    "browser_retry_acknowledged_as_duplicate": true,
+    "browser_one_row_after_response_loss": true,
+    "visibility_before_scroll": true,
+    "visibility_after_scroll": true,
+    "runtime_persists_container_recreation": true,
+    "capacity_requests_all_succeeded": true,
+    "no_unexpected_load_errors": true
+  },
+  "verification": {
+    "startup": {
+      "command": ".venv/Scripts/python.exe scripts/ai_startup_harness.py --check",
+      "passed": true
+    },
+    "tests": {
+      "command": ".venv/Scripts/python.exe scripts/ai_startup_harness.py --test",
+      "passed": true,
+      "tests_run": 245,
+      "opt_in_skipped": 5,
+      "log_sha256": "50b3a73aa749224cb21d7789fd57edfb33a86523976635e182dc0d1df29e2de9"
+    },
+    "release": {
+      "command": ".venv/Scripts/python.exe scripts/ai_startup_harness.py --release",
+      "passed": true
+    },
+    "lint": {
+      "command": ".venv/Scripts/python.exe -m ruff check --select E9,F821 src serve.py app.py feedback_app.py scripts tests",
+      "passed": true
+    },
+    "compose": {
+      "command": "docker compose config --quiet",
+      "passed": true
+    }
+  },
+  "recommendation_flow": {
+    "raw_report": {
+      "path": "experiments/demo_flow_container-review-20260914-v2.json",
+      "sha256": "6a0d6f89d4463b415bb9e16e2f4646ad777772bdf3a6c0dd94437cd8bac08039",
+      "local_raw_report": true
+    },
+    "user_id": 1,
+    "count_delta": {
+      "recommendations": 1,
+      "recommendation_items": 5,
+      "impressions": 5,
+      "feedback_events": 1
+    },
+    "checks": {
+      "default_retrieval_policy": true,
+      "one_recommendation_registered": true,
+      "candidates_registered": true,
+      "one_impression_per_displayed_item": true,
+      "impression_retry_is_noop": true,
+      "click_retry_is_noop": true,
+      "one_feedback_event_after_retries": true
+    },
+    "recommendation": {
+      "recommendation_id": "3db725a5fb0f4ae69ae8dddd27bf36ae",
+      "request_id": "0eb7fb65baae491f979e6bd713c672aa",
+      "user_id": 1,
+      "model_version": "two-tower-retrieval-ml1m-v2",
+      "ranking_policy": "retrieval",
+      "score_type": "two_tower_similarity",
+      "policy_name": "retrieval_deterministic_top_k_v2",
+      "exploration_rate": 0.0,
+      "n_candidates": 50,
+      "recommendations": [
+        {
+          "rank": 1,
+          "movie_id": 2085,
+          "title": "101 Dalmatians (1961)",
+          "genres": "Animation|Children's",
+          "score": 0.47044748067855835,
+          "candidate_rank": 1,
+          "behavior_propensity": 1.0
+        },
+        {
+          "rank": 2,
+          "movie_id": 2081,
+          "title": "Little Mermaid, The (1989)",
+          "genres": "Animation|Children's|Comedy|Musical|Romance",
+          "score": 0.46952205896377563,
+          "candidate_rank": 2,
+          "behavior_propensity": 1.0
+        },
+        {
+          "rank": 3,
+          "movie_id": 364,
+          "title": "Lion King, The (1994)",
+          "genres": "Animation|Children's|Musical",
+          "score": 0.468727171421051,
+          "candidate_rank": 3,
+          "behavior_propensity": 1.0
+        },
+        {
+          "rank": 4,
+          "movie_id": 2687,
+          "title": "Tarzan (1999)",
+          "genres": "Animation|Children's",
+          "score": 0.4496292471885681,
+          "candidate_rank": 4,
+          "behavior_propensity": 1.0
+        },
+        {
+          "rank": 5,
+          "movie_id": 2096,
+          "title": "Sleeping Beauty (1959)",
+          "genres": "Animation|Children's|Musical",
+          "score": 0.44159507751464844,
+          "candidate_rank": 5,
+          "behavior_propensity": 1.0
+        }
+      ]
+    },
+    "http_steps": [
+      {
+        "name": "counts_before",
+        "status": 200
+      },
+      {
+        "name": "recommend",
+        "status": 200
+      },
+      {
+        "name": "feedback_without_impression_rejected",
+        "status": 400
+      },
+      {
+        "name": "impression",
+        "status": 201
+      },
+      {
+        "name": "impression_retry",
+        "status": 200
+      },
+      {
+        "name": "click",
+        "status": 201
+      },
+      {
+        "name": "click_retry",
+        "status": 200
+      },
+      {
+        "name": "conflicting_event_rejected",
+        "status": 400
+      },
+      {
+        "name": "counts_after",
+        "status": 200
+      }
+    ]
+  },
+  "production_smoke": {
+    "raw_report": {
+      "path": "experiments/serve_production_smoke_container-review-20260914-v2.json",
+      "sha256": "7b780e6a7f0c3af218ffe0ed2e62da25659f7b4a24342aec9acf162ed326f3de",
+      "local_raw_report": true
+    },
+    "checks": {
+      "live_200": true,
+      "ready_200": true,
+      "all_workers_registered": true,
+      "all_models_loaded": true,
+      "paced_all_success": true,
+      "burst_rate_limited": true,
+      "aggregate_request_count_exact": true,
+      "every_worker_served_business_traffic": true,
+      "runtime_cpu_present": true,
+      "runtime_rss_present": true,
+      "event_loop_lag_sampled": true,
+      "prometheus_valid": true,
+      "successful_recommendations_logged": true
+    },
+    "request": {
+      "method": "POST",
+      "path": "/v1/recommendations",
+      "body": {
+        "user_id": 1,
+        "k": 10
+      }
+    },
+    "paced": {
+      "requests": 40,
+      "successes": 40,
+      "errors": 0,
+      "error_rate": 0.0,
+      "wall_s": 1.016,
+      "throughput_rps": 39.377,
+      "success_throughput_rps": 39.377,
+      "status_counts": {
+        "200": 40
+      },
+      "error_class_counts": {},
+      "exception_counts": {},
+      "correlation_failures": 0,
+      "latency_ms": {
+        "samples": 40,
+        "min": 5.409,
+        "mean": 6.713,
+        "p50": 6.674,
+        "p95": 8.04,
+        "p99": 8.895,
+        "max": 9.429
+      },
+      "latency_ms_by_status": {
+        "200": {
+          "samples": 40,
+          "min": 5.409,
+          "mean": 6.713,
+          "p50": 6.674,
+          "p95": 8.04,
+          "p99": 8.895,
+          "max": 9.429
+        }
+      }
+    },
+    "burst": {
+      "requests": 300,
+      "successes": 66,
+      "errors": 234,
+      "error_rate": 0.78,
+      "wall_s": 0.361,
+      "throughput_rps": 830.644,
+      "success_throughput_rps": 182.742,
+      "status_counts": {
+        "200": 66,
+        "429": 234
+      },
+      "error_class_counts": {
+        "overloaded": 1,
+        "rate_limited": 233
+      },
+      "exception_counts": {},
+      "correlation_failures": 0,
+      "latency_ms": {
+        "samples": 300,
+        "min": 0.711,
+        "mean": 31.945,
+        "p50": 43.617,
+        "p95": 48.634,
+        "p99": 56.567,
+        "max": 66.821
+      },
+      "latency_ms_by_status": {
+        "200": {
+          "samples": 66,
+          "min": 1.924,
+          "mean": 12.951,
+          "p50": 6.329,
+          "p95": 40.861,
+          "p99": 53.727,
+          "max": 66.821
+        },
+        "429": {
+          "samples": 234,
+          "min": 0.711,
+          "mean": 37.303,
+          "p50": 43.987,
+          "p95": 49.127,
+          "p99": 56.506,
+          "max": 56.878
+        }
+      }
+    },
+    "worker_recommendation_totals": {
+      "15": 245,
+      "16": 96
+    },
+    "runtime_sample": {
+      "cpu_percent_sum": 24.656,
+      "rss_bytes_sum": 1181851648,
+      "event_loop_lag_ms": {
+        "samples": 12,
+        "min": 0.0,
+        "mean": 0.593,
+        "p50": 0.654,
+        "p95": 1.136,
+        "p99": 1.184,
+        "max": 1.196
+      }
+    },
+    "lifecycle_note": "External service left running; shutdown cleanup not tested."
+  },
+  "load_runs": [
+    {
+      "mode": "default",
+      "raw_report": {
+        "path": "experiments/serve_load_container-default-c1-20260914-v2.json",
+        "sha256": "a06402458a69c60d4154c635edb2be21dbcf3b826e7bc2e694c2c7909d7c5b9e",
+        "local_raw_report": true
+      },
+      "service_config": {
+        "workers": 2,
+        "max_in_flight_per_worker": 8,
+        "rate_limit_per_worker": 80,
+        "rate_burst_per_worker": 8
+      },
+      "request_config": {
+        "base_url": "http://127.0.0.1:8860",
+        "path": "/v1/recommendations",
+        "method": "POST",
+        "json_body": {
+          "user_id": 1,
+          "k": 10
+        },
+        "traffic_kind": "scripted_load",
+        "requests": 200,
+        "concurrency": 1,
+        "warmup": 10,
+        "timeout_s": 30.0
+      },
+      "summary": {
+        "requests": 200,
+        "successes": 173,
+        "errors": 27,
+        "error_rate": 0.135,
+        "wall_s": 2.119,
+        "throughput_rps": 94.406,
+        "success_throughput_rps": 81.661,
+        "status_counts": {
+          "200": 173,
+          "429": 27
+        },
+        "error_class_counts": {
+          "rate_limited": 27
+        },
+        "exception_counts": {},
+        "correlation_failures": 0,
+        "latency_ms": {
+          "samples": 200,
+          "min": 4.248,
+          "mean": 10.575,
+          "p50": 5.469,
+          "p95": 43.217,
+          "p99": 44.556,
+          "max": 47.186
+        },
+        "latency_ms_by_status": {
+          "200": {
+            "samples": 173,
+            "min": 4.248,
+            "mean": 5.514,
+            "p50": 5.336,
+            "p95": 7.057,
+            "p99": 8.805,
+            "max": 11.259
+          },
+          "429": {
+            "samples": 27,
+            "min": 41.209,
+            "mean": 43.004,
+            "p50": 42.51,
+            "p95": 44.6,
+            "p99": 46.519,
+            "max": 47.186
+          }
+        }
+      }
+    },
+    {
+      "mode": "default",
+      "raw_report": {
+        "path": "experiments/serve_load_container-default-c16-20260914-v2.json",
+        "sha256": "da397f2f763eeec42fd18d8d9bc3adb9139f120c9130702e917d5f0ddd654e3d",
+        "local_raw_report": true
+      },
+      "service_config": {
+        "workers": 2,
+        "max_in_flight_per_worker": 8,
+        "rate_limit_per_worker": 80,
+        "rate_burst_per_worker": 8
+      },
+      "request_config": {
+        "base_url": "http://127.0.0.1:8860",
+        "path": "/v1/recommendations",
+        "method": "POST",
+        "json_body": {
+          "user_id": 1,
+          "k": 10
+        },
+        "traffic_kind": "scripted_load",
+        "requests": 200,
+        "concurrency": 16,
+        "warmup": 10,
+        "timeout_s": 30.0
+      },
+      "summary": {
+        "requests": 200,
+        "successes": 74,
+        "errors": 126,
+        "error_rate": 0.63,
+        "wall_s": 0.444,
+        "throughput_rps": 450.887,
+        "success_throughput_rps": 166.828,
+        "status_counts": {
+          "200": 74,
+          "429": 126
+        },
+        "error_class_counts": {
+          "rate_limited": 126
+        },
+        "exception_counts": {},
+        "correlation_failures": 0,
+        "latency_ms": {
+          "samples": 200,
+          "min": 0.651,
+          "mean": 29.383,
+          "p50": 42.41,
+          "p95": 47.895,
+          "p99": 48.169,
+          "max": 48.648
+        },
+        "latency_ms_by_status": {
+          "200": {
+            "samples": 74,
+            "min": 1.535,
+            "mean": 10.251,
+            "p50": 6.326,
+            "p95": 32.82,
+            "p99": 44.126,
+            "max": 48.648
+          },
+          "429": {
+            "samples": 126,
+            "min": 0.651,
+            "mean": 40.619,
+            "p50": 43.899,
+            "p95": 47.99,
+            "p99": 48.167,
+            "max": 48.185
+          }
+        }
+      }
+    },
+    {
+      "mode": "capacity",
+      "raw_report": {
+        "path": "experiments/serve_load_container-capacity-c1-20260914-v2.json",
+        "sha256": "869a04d3e2db7c409a93a8acee1b37c0afc77d2d6ed5f5a87cbfc4078351289f",
+        "local_raw_report": true
+      },
+      "service_config": {
+        "workers": 2,
+        "max_in_flight_per_worker": 32,
+        "rate_limit_per_worker": 0,
+        "rate_burst_per_worker": 8
+      },
+      "request_config": {
+        "base_url": "http://127.0.0.1:8860",
+        "path": "/v1/recommendations",
+        "method": "POST",
+        "json_body": {
+          "user_id": 1,
+          "k": 10
+        },
+        "traffic_kind": "scripted_load",
+        "requests": 200,
+        "concurrency": 1,
+        "warmup": 10,
+        "timeout_s": 30.0
+      },
+      "summary": {
+        "requests": 200,
+        "successes": 200,
+        "errors": 0,
+        "error_rate": 0.0,
+        "wall_s": 1.092,
+        "throughput_rps": 183.097,
+        "success_throughput_rps": 183.097,
+        "status_counts": {
+          "200": 200
+        },
+        "error_class_counts": {},
+        "exception_counts": {},
+        "correlation_failures": 0,
+        "latency_ms": {
+          "samples": 200,
+          "min": 4.279,
+          "mean": 5.443,
+          "p50": 5.265,
+          "p95": 6.942,
+          "p99": 8.539,
+          "max": 13.081
+        },
+        "latency_ms_by_status": {
+          "200": {
+            "samples": 200,
+            "min": 4.279,
+            "mean": 5.443,
+            "p50": 5.265,
+            "p95": 6.942,
+            "p99": 8.539,
+            "max": 13.081
+          }
+        }
+      }
+    },
+    {
+      "mode": "capacity",
+      "raw_report": {
+        "path": "experiments/serve_load_container-capacity-c16-20260914-v2.json",
+        "sha256": "28c9654e71bec1d2b406625f79660868e0d516e77e6dab63372b4079bc0d3750",
+        "local_raw_report": true
+      },
+      "service_config": {
+        "workers": 2,
+        "max_in_flight_per_worker": 32,
+        "rate_limit_per_worker": 0,
+        "rate_burst_per_worker": 8
+      },
+      "request_config": {
+        "base_url": "http://127.0.0.1:8860",
+        "path": "/v1/recommendations",
+        "method": "POST",
+        "json_body": {
+          "user_id": 1,
+          "k": 10
+        },
+        "traffic_kind": "scripted_load",
+        "requests": 200,
+        "concurrency": 16,
+        "warmup": 10,
+        "timeout_s": 30.0
+      },
+      "summary": {
+        "requests": 200,
+        "successes": 200,
+        "errors": 0,
+        "error_rate": 0.0,
+        "wall_s": 0.531,
+        "throughput_rps": 376.49,
+        "success_throughput_rps": 376.49,
+        "status_counts": {
+          "200": 200
+        },
+        "error_class_counts": {},
+        "exception_counts": {},
+        "correlation_failures": 0,
+        "latency_ms": {
+          "samples": 200,
+          "min": 1.537,
+          "mean": 21.424,
+          "p50": 6.427,
+          "p95": 84.401,
+          "p99": 237.23,
+          "max": 462.903
+        },
+        "latency_ms_by_status": {
+          "200": {
+            "samples": 200,
+            "min": 1.537,
+            "mean": 21.424,
+            "p50": 6.427,
+            "p95": 84.401,
+            "p99": 237.23,
+            "max": 462.903
+          }
+        }
+      }
+    }
+  ],
+  "browser": {
+    "browser": "Microsoft Edge via Playwright CLI",
+    "viewport": [
+      390,
+      844
+    ],
+    "traffic_kind": "scripted_browser_qa_in_isolated_volume",
+    "failure_injection": "Let route.fetch() persist the click, then abort its browser response once.",
+    "failure_message": "连接中断，请稍后重试。",
+    "after_retry_button": "已记录",
+    "first_payload": {
+      "recommendation_id": "a7ddfae8275640fb80af5c08886ea3c5",
+      "movie_id": 2085,
+      "event_type": "click",
+      "event_id": "b76de4f1-ba07-4b70-aeac-7e0147bb4d6e",
+      "occurred_at": "2026-09-14T07:49:23.963Z"
+    },
+    "retry_payload": {
+      "recommendation_id": "a7ddfae8275640fb80af5c08886ea3c5",
+      "movie_id": 2085,
+      "event_type": "click",
+      "event_id": "b76de4f1-ba07-4b70-aeac-7e0147bb4d6e",
+      "occurred_at": "2026-09-14T07:49:23.963Z"
+    },
+    "retry_response": {
+      "event_id": "b76de4f1-ba07-4b70-aeac-7e0147bb4d6e",
+      "inserted": false,
+      "duplicate": true
+    },
+    "db_events_before_retry": [
+      {
+        "event_id": "b76de4f1-ba07-4b70-aeac-7e0147bb4d6e",
+        "movie_id": 2085,
+        "event_type": "click",
+        "occurred_at": "2026-09-14T07:49:23.963Z"
+      }
+    ],
+    "db_events_after_retry": [
+      {
+        "event_id": "b76de4f1-ba07-4b70-aeac-7e0147bb4d6e",
+        "movie_id": 2085,
+        "event_type": "click",
+        "occurred_at": "2026-09-14T07:49:23.963Z"
+      }
+    ],
+    "visibility_check": {
+      "slate_size": 10,
+      "initial_impressions": 4,
+      "after_scroll_impressions": 10,
+      "note": "Visibility check preceded the final genre wrapping fix; final narrow-screen layout also visually checked."
+    },
+    "local_screenshots": [
+      "output/playwright/mobile-final.png"
+    ]
+  },
+  "persistence": {
+    "passed": true,
+    "before": {
+      "recommendations": 372,
+      "recommendation_items": 3710,
+      "impressions": 10,
+      "feedback_events": 3
+    },
+    "after": {
+      "recommendations": 372,
+      "recommendation_items": 3710,
+      "impressions": 10,
+      "feedback_events": 3
+    }
+  },
+  "model_decision": {
+    "decision": "keep_retrieval_default",
+    "existing_evidence_reused_without_retraining": true,
+    "raw_report": {
+      "path": "experiments/eval_end_to_end_v0-ci.json",
+      "sha256": "49482f557a3adf9a9b240e79c8397de5eb32df0f12bd299346fb5acbae7e9895",
+      "local_raw_report": true
+    },
+    "dataset": "MovieLens-1M",
+    "protocol": {
+      "split": "leave-one-out (each user's last rating, kept when >= 4)",
+      "note": "not comparable with the DeepFM time-split AUC; different dataset split and different task",
+      "k": 10,
+      "n_candidates": 50,
+      "path": "Recommender.recommend (same code as serve.py / app.py)",
+      "ranker_checkpoint": "checkpoints/deepfm.pt"
+    },
+    "users_evaluated": 3552,
+    "retrieval_only": {
+      "recall@10": 0.097973,
+      "ndcg@10": 0.04627,
+      "meaning": "跳过 DeepFM，直接取双塔前 K —— 精排必须赢过这个才有价值"
+    },
+    "retired_deepfm_path": {
+      "recall@10": 0.065034,
+      "ndcg@10": 0.030523
+    },
+    "ranker_effect": {
+      "recall@k_delta": -0.032939,
+      "recall@k_delta_ci95": [
+        -0.044482,
+        -0.021959
+      ],
+      "significance": "ranking_hurts_significantly",
+      "promoted_true_item": 451,
+      "demoted_true_item": 620,
+      "unchanged": 21,
+      "verdict": "ranking_hurts"
+    },
+    "limits": "Per-user leave-one-out permits cross-user time travel; these are offline relevance metrics, not CTR or real-user lift."
+  },
+  "interpretation": [
+    "Each load run is a short 200-request fixed-user benchmark after 10 warmups, not a soak test or public-network SLO.",
+    "Use HTTP 200 latency and successful RPS separately from 429 counts. Periodic worker snapshots may lag.",
+    "Default c1 holds one keep-alive worker connection, so it mainly sees that worker's 80 RPS token bucket.",
+    "Capacity configuration disables rate limiting and widens the admission gate; it is not the default deployment configuration.",
+    "Final v2 runs were collected after the last source changes; earlier local runs remain preserved.",
+    "All essential results are embedded here; referenced raw reports and screenshots remain local/ignored.",
+    "All browser/demo/load events in this isolated volume are test data; they do not establish real-user recommendation benefit."
+  ]
+}

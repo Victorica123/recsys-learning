@@ -11,14 +11,19 @@ curl http://localhost:8000/openapi.json
 ```
 
 镜像不内置数据集和权重；Compose 以只读卷挂载二者，并把 SQLite 反馈库和
-worker 指标放入持久卷。新客户端使用 `POST /v1/recommendations`、
+worker 指标放入持久卷。容器使用 CPU Torch、非 root 用户和固定摘要的 Python 基础镜像。
+默认只绑定宿主机 `127.0.0.1:8000`；打开该地址即可使用主网页。
+新客户端使用 `POST /v1/recommendations`、
 `/v1/events/impression` 和 `/v1/events/feedback`；旧路径继续兼容。
 `/openapi.json` 可在模型未加载时读取，因此部署流水线可以独立校验接口合约。
 
-提交前至少运行单元测试与 `docker compose config --quiet`。具备真实权重的发布环境
-再运行 `scripts/production_smoke.py --tag <unique-tag>`，并用
+提交前运行单元测试与 `docker compose config --quiet`。具备真实权重的发布环境
+运行 `scripts/production_smoke.py --base-url http://127.0.0.1:8000 --tag <unique-tag>`，并用
 `scripts/load_test_api.py` 记录目标机器上的 p95/p99、成功 RPS、429 分类与 RSS；
 历史本机数字只能作为基线，不能冒充部署环境 SLO。
+
+外部模式直接检查这个容器，不另起本地 API，也不停止被测服务。
+本轮构建、完整交互、重试、重建持久化和压测证据见 [交付验证](APPLICATION_DELIVERY.md)。
 
 ```bash
 curl -X POST http://localhost:8000/v1/recommendations \
@@ -28,6 +33,23 @@ curl -X POST http://localhost:8000/v1/recommendations \
 
 推荐请求会生成并持久化 `recommendation_id` 后才返回，因此正式接口采用有副作用
 语义清晰的 POST。旧 `GET /recommend` 仅为已有 Demo 兼容保留。
+
+空结果返回 `recommendation_id=null`，不会创建空批次。v1 接口拒绝布尔值、小数和
+数字字符串冒充整数。曝光接口接收实际展示的 `movie_ids`；反馈必须有匹配曝光，
+并提供客户端生成的 `event_id`。相同事件重试返回 200 和 `duplicate=true`，冲突内容返回 400。
+
+完整的固定用户演示：
+
+```powershell
+.venv/Scripts/python.exe scripts/demo_recommendation_flow.py --base-url http://127.0.0.1:8000 --tag my-first-flow
+```
+
+脚本写入 `demo-*` 演示事件；压测写入 `load-*` 事件。报告中明确标记为脚本流量。
+在独立测试实例/数据卷中执行，不要把这些事件与真人偏好混合做效果评估。
+
+Compose 支持 `RECSYS_PORT`、`RECSYS_WORKERS`、`RECSYS_MAX_IN_FLIGHT`、
+`RECSYS_RATE_LIMIT` 和 `RECSYS_RATE_BURST`。默认分别是 8000、2、8、80、8。
+`RECSYS_API_KEY` 启用可选鉴权；演示、压测和冒烟脚本读取同名环境变量，不在报告中保存密钥。
 
 ## 推荐启动配置
 
@@ -135,7 +157,8 @@ scrape_configs:
 - `X-Request-ID`：关联日志。
 
 客户端应采用带抖动的指数退避，并设置总重试预算；不要收到 429 后立即无界重试。
-推荐只重试幂等的 GET 请求。
+曝光与反馈可以按原内容重试，反馈必须沿用原 `event_id`。创建推荐的 POST 每次
+生成新批次；旧 GET 也有登记副作用，不能因为使用 GET 就假设它天然幂等。
 
 ## 优雅停机
 
@@ -148,7 +171,7 @@ scrape_configs:
 完整真实模型冒烟：
 
 ```powershell
-.venv/Scripts/python.exe scripts/production_smoke.py --tag <unique-tag>
+.venv/Scripts/python.exe scripts/production_smoke.py --base-url http://127.0.0.1:8000 --tag <unique-tag>
 ```
 
 该命令验证：
@@ -159,8 +182,10 @@ scrape_configs:
 4. JSON 聚合计数与客户端请求数一致；
 5. Prometheus、CPU/RSS、事件循环 lag 均存在；
 6. 每个 worker 都处理到业务流量；
-7. 强制崩溃后的过期注册文件可自动回收。
+7. 成功推荐数与实际反馈库中的批次增量一致。
 
+省略 `--base-url` 时，脚本另起一个隔离的本地服务，结束后还检查崩溃遗留注册文件回收；
+指定外部服务时不检查其关闭清理。
 正常 lifespan 停机与“最后一次后台写入晚于注销”的竞态由
 `tests/test_serve_lifecycle.py` 单独验证。
 
@@ -169,14 +194,14 @@ scrape_configs:
 - 指标和限流都是单主机方案；跨主机限流需要入口网关或共享后端。
 - 聚合延迟分位数基于每 worker 最近的有界样本，不代表无限历史。
 - 进程内 Counter 会在 worker 重启时归零；Prometheus 的 `increase()` 能处理常见重启。
-- 本机结果不包含 TLS、反向代理、真实网络、请求体或多租户影响。
+- 本轮容器结果包含 POST JSON 与 Windows 到 Docker 的本地转发；不包含 TLS、反向代理、公网流量或多租户影响。
 
 ## 反馈数据
 
 推荐服务会同步持久化成功返回的推荐及完整候选池；如果 SQLite 写入失败，
-`/recommend` 返回 503，不会产生无法追踪的推荐。默认数据库为
-`runtime/feedback/events.sqlite3`，多 worker 通过 WAL 共享。压测和生产冒烟
-脚本使用按 tag 隔离的数据库，避免把合成流量混入默认反馈。
+`/v1/recommendations` 返回 503，不会宣称已经登记成功。默认数据库为
+`runtime/feedback/events.sqlite3`，多 worker 通过 WAL 共享。仅自动启动本地服务的
+冒烟模式使用按 tag 隔离的数据库；外部冒烟和压测写入目标服务的数据卷，需要使用独立测试实例。
 
 上线时必须显式设置稳定的 `--model-version`、`--ranking-policy` 和持久盘上的
 `--feedback-db`。默认 `--exploration-rate 0`；探索会改变用户看到的物品，

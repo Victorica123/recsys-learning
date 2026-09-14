@@ -29,7 +29,10 @@ Use the project virtual environment at `.venv/Scripts/python.exe` and run comman
 - Python syntax: `.venv/Scripts/python.exe scripts/ai_startup_harness.py --check`
 - Smoke tests (CPU-only, no network): `.venv/Scripts/python.exe scripts/ai_startup_harness.py --test`
 - Model smoke tests: run the smallest relevant script arguments (for example `train_pg_rec.py --updates 1` or `train_sasrec.py --epochs 1 --eval_every 1`).
-- Demo: `.venv/Scripts/python.exe -m streamlit run app.py`
+- Main web demo: `.venv/Scripts/python.exe serve.py --preload`, open port 8000.
+- Scripted recommendation/exposure/click check:
+  `.venv/Scripts/python.exe scripts/demo_recommendation_flow.py --tag <unique-tag>`.
+- Optional Streamlit demo: `.venv/Scripts/python.exe -m streamlit run app.py`
 - REST API: `.venv/Scripts/python.exe serve.py --port 8000 --preload`, then `GET /health`.
 
 ## Human Reading Defaults
@@ -58,9 +61,15 @@ Use the project virtual environment at `.venv/Scripts/python.exe` and run comman
 
 ## Task Routing
 
-- Product/demo surface: `app.py` (Streamlit) and `serve.py` (REST API),
-  both reusing `src/serving.py`. The Streamlit page calls the Python core
-  directly; it is not an HTTP client of `serve.py`.
+- Product/demo surface: `web/index.html` calls the versioned POST routes in
+  `serve.py`, which reuse `src/serving.py`; visible-item impressions and click
+  retries are part of the same page. `app.py` remains an optional Streamlit
+  view calling the Python core directly, not an HTTP client of `serve.py`.
+- Container verification: `Dockerfile`, `compose.yaml`,
+  `scripts/production_smoke.py --base-url <url> --tag <unique-tag>` (checks the
+  existing service without launching/stopping another). Load tests support
+  `--method POST`. Keep scripted demo/load events distinct from real-user
+  evidence and separate successful-response latency from 429 rejections.
 - Exposure/feedback: `feedback_app.py`, `src/feedback.py`,
   `docs/FEEDBACK_LOOP.md`. The separate feedback page needs no API process.
 - Data and baseline models: `src/explore_data.py`, `src/train_mf.py`.

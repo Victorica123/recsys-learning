@@ -19,8 +19,8 @@ separate evidence question. Do not relabel that seed as video behavior.
 ## Project In One Sentence
 
 A video/content recommendation prototype using MovieLens ratings, with
-two-tower/Faiss retrieval, a shared inference core for Streamlit and HTTP,
-exposure/feedback collection and reproducible evaluation; sequence models,
+two-tower/Faiss retrieval, a web page calling the HTTP API, a shared inference
+core also used by Streamlit, exposure/feedback collection and reproducible evaluation; sequence models,
 simulated-session RL and enterprise migration are optional extensions.
 Within search/advertising/recommendation, the implemented application is the
 recommendation part. Video keyword search and ad bidding are future work.
@@ -30,8 +30,9 @@ recommendation part. Video keyword search and ad bidding are future work.
 ```text
 MovieLens movie ratings
   -> TwoTower + Faiss IndexFlatIP -> filter rated items -> Top-K
-  -> shared Recommender -> Streamlit page / independent HTTP API
-  -> separate feedback page / event APIs -> replay and policy evaluation
+  -> shared Recommender <- HTTP API <- web/index.html
+  -> visible-item impressions + click/retry -> SQLite -> replay/evaluation
+  -> optional Streamlit recommendation and feedback experiment pages
 
 Research extensions
   -> MF / DeepFM / SASRec / Bandit / simulated-session RL
@@ -45,6 +46,13 @@ Optional enterprise synthetic seed
 
 ## Current Completed State
 
+- Web application delivery (2026-09-14): versioned POST recommendation/event
+  routes, strict request types and complete OpenAPI; one-page recommendation,
+  visible-item exposure and stable-ID click retry; CPU Docker/Compose delivery.
+  The demo and load tools use explicitly tagged scripted traffic. Container
+  acceptance uses `production_smoke.py --base-url` against the actual service.
+  See `docs/APPLICATION_DELIVERY.md` for this round's verified evidence and
+  commands, and the current section of `docs/AI_HANDOFF.md` for pending work.
 - Mainline positioning restored (2026-09-14): README, concise onboarding,
   interview guide and study map lead with video/content recommendation.
   Enterprise guides are retained under `docs/ENTERPRISE_*.md`. The current
@@ -187,7 +195,9 @@ default task for this video/content recommendation project.
 
 | Need | Read/run |
 |---|---|
-| Run the main content recommendation demo | `.venv/Scripts/python.exe -m streamlit run app.py` |
+| Run the main content recommendation demo | `.venv/Scripts/python.exe serve.py --preload`; open port 8000 |
+| Verify recommendation -> impression -> click retries | `scripts/demo_recommendation_flow.py --tag <unique-tag>` |
+| Inspect profiles/history in the optional Streamlit view | `.venv/Scripts/python.exe -m streamlit run app.py` |
 | Explain the project / prepare AI full-stack interviews | `项目导学.md`, `docs/INTERVIEW_PLAYBOOK.md`, `docs/INTERVIEW_STUDY_MAP.md` |
 | Full MovieLens reproduction guide | `docs/MOVIELENS_GUIDE.md` (commands run from repository root) |
 | Learn the stack from scratch (beginner) | `docs/从零到懂-课程浓缩指南.md`（数学→ML→DL→推荐→RL→对齐→面试，含 60+ 术语词典） |
@@ -196,11 +206,11 @@ default task for this video/content recommendation project.
 | Offline RL / post-training | `research_v2/phase2_offline_rl/`, `notes/12-推荐系统后训练-离线RL与SFT.md` |
 | Active tool gate | `research_v3/agentic_rec/`, `notes/13-Agentic推荐-主动工具调用.md` |
 | Multi-tool trajectory experiment | `scripts/agentic_multitool_experiment.py --tag <unique-tag>`; `notes/20-Agentic多工具预算轨迹.md` |
-| Understand serving path | `app.py`, `src/serving.py`, `serve.py`, `src/train_two_tower.py`, `src/train_deepfm.py` |
+| Understand serving path | `web/index.html`, `serve.py`, `src/serving.py`, `src/api_contract.py` |
 | Inspect API capacity | `src/observability.py`, `scripts/load_test_api.py`, `experiments/serve_load_*.json` |
 | Re-run worker/overload sweep | `scripts/scaling_experiment.py --tag <unique-tag>` |
 | Deploy/monitor the API | `docs/PRODUCTION_SERVING.md`, `monitoring/prometheus_rules.yml` |
-| Verify full production surface | `scripts/production_smoke.py --tag <unique-tag>` |
+| Verify full production surface | `scripts/production_smoke.py --base-url http://127.0.0.1:8000 --tag <unique-tag>` |
 | Export feedback and run OPE | `scripts/feedback_replay.py --tag <unique-tag> --policy-name <exact> --model-version <exact> --target-k 10` |
 | Calibrate OPE against an oracle | `scripts/validate_ope_estimators.py --tag <unique-tag> --recommendations 5000` |
 | Run Semantic-ID generative retrieval | `scripts/benchmark_generative_retrieval.py --tag <unique-tag> --seeds 42,43,44` |

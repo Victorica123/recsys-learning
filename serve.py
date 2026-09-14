@@ -31,6 +31,7 @@
 import asyncio
 import hmac
 import logging
+import math
 import os
 import sys
 import threading
@@ -282,15 +283,18 @@ async def create_recommendation(request: Request):
         return invalid
     if "user_id" not in payload:
         return _json({"error": "missing fields: user_id"}, 400)
-    try:
-        uid = int(payload["user_id"])
-        k = int(payload.get("k", 10))
-    except (TypeError, ValueError):
+    uid, k = payload["user_id"], payload.get("k", 10)
+    if type(uid) is not int or type(k) is not int:
         return _json({"error": "user_id and k must be integers"}, 400)
+    if uid <= 0:
+        return _json({"error": "user_id must be a positive integer"}, 400)
     if k <= 0:
         return _json({"error": "k must be a positive integer"}, 400)
     if k > 100:
         return _json({"error": "k cannot exceed 100"}, 400)
+    actor = request.headers.get("x-actor-id")
+    if actor is not None and not 1 <= len(actor) <= 128:
+        return _json({"error": "X-Actor-ID must contain 1 to 128 characters"}, 400)
     return await _serve_recommendation(request, uid, k)
 
 
@@ -310,17 +314,28 @@ async def _serve_recommendation(request: Request, uid: int, k: int):
     except UnknownUserError:
         return _json({"error": f"unknown user_id {uid}"}, 404)
     candidates = result["recommendations"]
-    if not candidates:
-        return _json(result)
-
-    served, logged = select_slate(candidates, k, _EXPLORATION_RATE)
-    recommendation_id = uuid.uuid4().hex
     request_id = request.scope.get("recsys.request_id")
     policy_name = (
         f"{_RANKING_POLICY}_epsilon_slate_v2"
         if _EXPLORATION_RATE > 0.0
         else f"{_RANKING_POLICY}_deterministic_top_k_v2"
     )
+    response = {
+        "recommendation_id": None,
+        "request_id": request_id,
+        "user_id": result["user_id"],
+        "model_version": _MODEL_VERSION,
+        "ranking_policy": result["ranking_policy"],
+        "score_type": result["score_type"],
+        "policy_name": policy_name,
+        "exploration_rate": _EXPLORATION_RATE,
+        "n_candidates": result["n_candidates"],
+        "recommendations": [],
+    }
+    if not candidates:
+        return _json(response)
+    served, logged = select_slate(candidates, k, _EXPLORATION_RATE)
+    recommendation_id = uuid.uuid4().hex
     try:
         await run_in_threadpool(
             lambda: _FEEDBACK.record_recommendation(
@@ -339,24 +354,53 @@ async def _serve_recommendation(request: Request, uid: int, k: int):
         logging.getLogger("recsys.feedback").exception(
             "failed to persist recommendation")
         return _json({"error": "feedback store unavailable"}, 503)
-    return _json({
-        "recommendation_id": recommendation_id,
-        "request_id": request_id,
-        "user_id": result["user_id"],
-        "model_version": _MODEL_VERSION,
-        "ranking_policy": result["ranking_policy"],
-        "score_type": result["score_type"],
-        "policy_name": policy_name,
-        "exploration_rate": _EXPLORATION_RATE,
-        "n_candidates": result["n_candidates"],
-        "recommendations": served,
-    })
+    response.update(recommendation_id=recommendation_id, recommendations=served)
+    return _json(response)
+
+
+def _v1_event_error(payload: dict, *, feedback: bool) -> str | None:
+    """Validate JSON types before SQLite or int() can coerce a different event."""
+    identifier = payload.get("recommendation_id")
+    if not isinstance(identifier, str) or not 1 <= len(identifier) <= 128:
+        return "recommendation_id must contain 1 to 128 characters"
+    timestamp = payload.get("occurred_at" if feedback else "impressed_at")
+    if timestamp is not None and not isinstance(timestamp, str):
+        return "event timestamp must be a string or null"
+    if not feedback:
+        ids = payload.get("movie_ids")
+        if ids is not None and (
+            not isinstance(ids, list) or not 1 <= len(ids) <= 100
+            or any(type(mid) is not int or mid <= 0 for mid in ids)
+        ):
+            return "movie_ids must contain 1 to 100 positive integers"
+        return None
+    mid = payload.get("movie_id")
+    if type(mid) is not int or mid <= 0:
+        return "movie_id must be a positive integer"
+    identifier = payload.get("event_id")
+    if not isinstance(identifier, str) or not 1 <= len(identifier) <= 128:
+        return "event_id must contain 1 to 128 characters; reuse it when retrying"
+    if not isinstance(payload.get("event_type"), str):
+        return "event_type must be a string"
+    value = payload.get("value")
+    if value is not None:
+        try:
+            valid = type(value) in (int, float) and math.isfinite(value) and value >= 0
+        except OverflowError:
+            valid = False
+        if not valid:
+            return "value must be a finite non-negative number or null"
+    return None
 
 
 async def record_impression(request: Request):
     payload, invalid = await _json_body(request)
     if invalid is not None:
         return invalid
+    if request.url.path.startswith("/v1/"):
+        error = _v1_event_error(payload, feedback=False)
+        if error:
+            return _json({"error": error}, 400)
     recommendation_id = payload.get("recommendation_id")
     if not isinstance(recommendation_id, str) or not recommendation_id:
         return _json({"error": "recommendation_id is required"}, 400)
@@ -370,7 +414,7 @@ async def record_impression(request: Request):
             movie_ids,
             payload.get("impressed_at"),
         )
-    except (FeedbackValidationError, TypeError, ValueError) as exc:
+    except (FeedbackValidationError, TypeError, ValueError, OverflowError) as exc:
         return _json({"error": str(exc)}, 400)
     except Exception:
         logging.getLogger("recsys.feedback").exception(
@@ -383,6 +427,10 @@ async def record_feedback(request: Request):
     payload, invalid = await _json_body(request)
     if invalid is not None:
         return invalid
+    if request.url.path.startswith("/v1/"):
+        error = _v1_event_error(payload, feedback=True)
+        if error:
+            return _json({"error": error}, 400)
     missing = [
         key for key in ("recommendation_id", "movie_id", "event_type")
         if key not in payload
@@ -400,7 +448,7 @@ async def record_feedback(request: Request):
                 occurred_at=payload.get("occurred_at"),
             )
         )
-    except (FeedbackValidationError, TypeError, ValueError) as exc:
+    except (FeedbackValidationError, TypeError, ValueError, OverflowError) as exc:
         return _json({"error": str(exc)}, 400)
     except Exception:
         logging.getLogger("recsys.feedback").exception(

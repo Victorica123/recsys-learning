@@ -1,6 +1,7 @@
 """Exercise the complete production serving surface with real checkpoints.
 
-Starts a two-worker API instance, verifies live/ready probes, cross-worker JSON
+Starts a two-worker API instance (or uses --base-url for an existing container),
+verifies live/ready probes, cross-worker JSON
 and Prometheus metrics, runtime CPU/RSS/event-loop signals, a paced success
 phase, a rate-limited burst phase, and graceful registry cleanup. The report
 is written under ``experiments/`` with a unique tag.
@@ -18,7 +19,8 @@ from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent.parent
 
-from load_test_api import run_load, safe_tag, summarize  # noqa: E402
+from load_test_api import (  # noqa: E402
+    run_load, safe_tag, summarize, request_headers, request_json)
 from scaling_experiment import (  # noqa: E402
     fetch_json, start_server, stop_server, wait_for_workers)
 
@@ -30,10 +32,13 @@ from feedback import FeedbackStore  # noqa: E402
 
 def fetch_text(base_url: str, path: str, timeout: float) -> tuple[int, str]:
     parts = urlsplit(base_url)
-    connection = http.client.HTTPConnection(
-        parts.hostname, parts.port or 80, timeout=timeout)
+    connection_type = (http.client.HTTPSConnection if parts.scheme == "https"
+                       else http.client.HTTPConnection)
+    connection = connection_type(
+        parts.hostname, parts.port, timeout=timeout)
     try:
-        connection.request("GET", path, headers={"Connection": "close"})
+        connection.request("GET", parts.path.rstrip("/") + path,
+                           headers=request_headers({"Connection": "close"}))
         response = connection.getresponse()
         return response.status, response.read().decode("utf-8")
     finally:
@@ -41,11 +46,15 @@ def fetch_text(base_url: str, path: str, timeout: float) -> tuple[int, str]:
 
 
 def paced_load(base_url: str, path: str, requests: int, interval_s: float,
-               timeout: float) -> tuple[list[dict], float]:
+               timeout: float, *, method: str = "GET",
+               json_body: dict | None = None) -> tuple[list[dict], float]:
     """Send a below-limit keep-alive stream for the clean success phase."""
     parts = urlsplit(base_url)
-    connection = http.client.HTTPConnection(
-        parts.hostname, parts.port or 80, timeout=timeout)
+    connection_type = (http.client.HTTPSConnection if parts.scheme == "https"
+                       else http.client.HTTPConnection)
+    connection = connection_type(parts.hostname, parts.port, timeout=timeout)
+    body = None if json_body is None else json.dumps(json_body).encode()
+    target = parts.path.rstrip("/") + path
     rows = []
     wall_started = time.perf_counter()
     try:
@@ -53,11 +62,12 @@ def paced_load(base_url: str, path: str, requests: int, interval_s: float,
             iteration_started = time.perf_counter()
             request_id = f"paced-{index}-{uuid.uuid4().hex[:12]}"
             try:
-                connection.request("GET", path, headers={
+                connection.request(method, target, body=body, headers=request_headers({
                     "Accept": "application/json",
                     "Connection": "keep-alive",
+                    "X-Actor-ID": "demo-production-smoke",
                     "X-Request-ID": request_id,
-                })
+                }))
                 response = connection.getresponse()
                 response.read()
                 rows.append({
@@ -66,6 +76,7 @@ def paced_load(base_url: str, path: str, requests: int, interval_s: float,
                         time.perf_counter() - iteration_started) * 1000,
                     "correlation_ok": (
                         response.getheader("X-Request-ID") == request_id),
+                    "error_class": response.getheader("X-Error-Class"),
                 })
             except (OSError, http.client.HTTPException) as exc:
                 rows.append({
@@ -76,8 +87,8 @@ def paced_load(base_url: str, path: str, requests: int, interval_s: float,
                     "error": f"{type(exc).__name__}: {exc}",
                 })
                 connection.close()
-                connection = http.client.HTTPConnection(
-                    parts.hostname, parts.port or 80, timeout=timeout)
+                connection = connection_type(
+                    parts.hostname, parts.port, timeout=timeout)
             remaining = interval_s - (
                 time.perf_counter() - iteration_started)
             if remaining > 0:
@@ -88,23 +99,48 @@ def paced_load(base_url: str, path: str, requests: int, interval_s: float,
 
 
 def wait_for_aggregate(base_url: str, minimum_requests: int,
-                       workers: int, timeout: float) -> dict:
+                       workers: int, timeout: float, *,
+                       route: str | None = None, fresh: bool = False) -> dict:
     deadline = time.perf_counter() + timeout
     last = None
+    initial_publications = None
     while time.perf_counter() < deadline:
         last = fetch_json(base_url, "/metrics/aggregate", timeout=2)
-        if (last and last.get("worker_count") == workers
-                and last.get("requests", {}).get("total", 0)
-                >= minimum_requests):
-            return last
+        if last and last.get("worker_count") == workers:
+            publications = {row["pid"]: row.get("published_at")
+                            for row in last.get("workers", [])}
+            count = (last.get("routes", {}).get(route, {}).get("count", 0)
+                     if route else last.get("requests", {}).get("total", 0))
+            if fresh and initial_publications is None:
+                initial_publications = publications
+            elif (count >= minimum_requests and (
+                    not fresh or all(value != initial_publications.get(pid)
+                                     for pid, value in publications.items()))):
+                return last
         time.sleep(0.1)
     raise TimeoutError(
         f"aggregate did not reach workers={workers}, requests="
         f"{minimum_requests}; last={last}")
 
 
+def remote_feedback_stats(base_url: str, timeout: float) -> dict:
+    for _ in range(4):
+        status, payload, headers = request_json(
+            base_url, "/events/stats", timeout=timeout)
+        if status == 200:
+            return payload
+        if status != 429:
+            raise RuntimeError(f"feedback stats returned HTTP {status}")
+        delay = float(next((value for key, value in headers.items()
+                            if key.lower() == "retry-after"), "1"))
+        time.sleep(min(max(delay, 0.1), 2))
+    raise RuntimeError("feedback stats still rate limited after bounded retries")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--base-url", default=None,
+                        help="verify an existing service; never starts/stops it")
     parser.add_argument("--port", type=int, default=8820)
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--max-in-flight", type=int, default=8)
@@ -126,53 +162,75 @@ def main() -> int:
     metrics_dir = ROOT / "runtime" / "metrics" / f"production-{run_tag}"
     feedback_db = (
         ROOT / "runtime" / "feedback" / f"production-{run_tag}.sqlite3")
-    if feedback_db.exists():
+    external = args.base_url is not None
+    if feedback_db.exists() and not external:
         parser.error(
             f"refusing to append to existing feedback database: {feedback_db}")
-    base_url = f"http://127.0.0.1:{args.port}"
-    path = "/recommend?user_id=1&k=10"
+    base_url = args.base_url or f"http://127.0.0.1:{args.port}"
+    parts = urlsplit(base_url)
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        parser.error("base-url must be an absolute http(s) URL")
+    path = "/v1/recommendations"
+    request_options = {"method": "POST", "json_body": {"user_id": 1, "k": 10}}
     registry = FileMetricsRegistry(metrics_dir, stale_after_s=5)
     report = {
         "schema_version": 1,
         "recorded_at": datetime.now(timezone.utc).isoformat(),
         "config": vars(args),
+        "traffic_kind": "scripted_smoke",
+        "service_ownership": "external" if external else "managed_local",
+        "request": {"method": "POST", "path": path, "body": {"user_id": 1, "k": 10}},
         "checks": {},
     }
     proc = None
     failure = None
     try:
-        proc = start_server(
-            args.port, args.workers, args.max_in_flight,
-            rate_limit=args.rate_limit, rate_burst=args.rate_burst,
-            metrics_interval=0.25, metrics_dir=metrics_dir,
-            feedback_db=feedback_db)
+        if not external:
+            proc = start_server(
+                args.port, args.workers, args.max_in_flight,
+                rate_limit=args.rate_limit, rate_burst=args.rate_burst,
+                metrics_interval=0.25, metrics_dir=metrics_dir,
+                feedback_db=feedback_db)
         worker_pids = wait_for_workers(base_url, args.workers)
         report["worker_pids"] = worker_pids
 
         live = fetch_json(base_url, "/live", args.timeout)
         ready = fetch_json(base_url, "/ready", args.timeout)
+        feedback_before = (remote_feedback_stats(base_url, args.timeout) if external
+                           else FeedbackStore(feedback_db).stats())
         baseline = wait_for_aggregate(
             base_url, minimum_requests=0, workers=args.workers,
-            timeout=args.timeout)
+            timeout=args.timeout, fresh=True)
+        before_count = baseline.get("routes", {}).get(path, {}).get("count", 0)
 
         paced_rows, paced_wall = paced_load(
             base_url, path, args.paced_requests, args.paced_interval,
-            args.timeout)
+            args.timeout, **request_options)
         paced = summarize(paced_rows, paced_wall)
         after_paced = wait_for_aggregate(
-            base_url, args.paced_requests, args.workers, args.timeout)
+            base_url, before_count + args.paced_requests, args.workers,
+            args.timeout, route=path)
 
         burst_rows, burst_wall = run_load(
             base_url, path, args.burst_requests,
-            args.burst_concurrency, args.timeout)
+            args.burst_concurrency, args.timeout, **request_options)
         burst = summarize(burst_rows, burst_wall)
         total_expected = args.paced_requests + args.burst_requests
         after_burst = wait_for_aggregate(
-            base_url, total_expected, args.workers, args.timeout)
+            base_url, before_count + total_expected, args.workers, args.timeout,
+            route=path)
         prometheus_status, prometheus = fetch_text(
             base_url, "/metrics/prometheus", args.timeout)
-        worker_snapshots = registry.collect()
-        feedback = FeedbackStore(feedback_db).stats()
+        per_worker_totals = {
+            str(worker["pid"]): worker.get("route_counts", {}).get(path, 0)
+            for worker in after_burst.get("workers", [])
+        }
+        per_worker_before = {
+            str(worker["pid"]): worker.get("route_counts", {}).get(path, 0)
+            for worker in baseline.get("workers", [])
+        }
+        feedback = (remote_feedback_stats(base_url, args.timeout) if external
+                    else FeedbackStore(feedback_db).stats())
 
         report.update({
             "probes": {"live": live, "ready": ready},
@@ -183,16 +241,12 @@ def main() -> int:
                 "after_paced": after_paced,
                 "after_burst": after_burst,
             },
-            "per_worker_request_totals": {
-                str((snapshot.get("process") or {}).get("pid")):
-                (snapshot.get("requests") or {}).get("total", 0)
-                for snapshot in worker_snapshots
-            },
+            "per_worker_recommendation_totals": per_worker_totals,
             "prometheus": {
                 "status": prometheus_status,
                 "line_count": len(prometheus.splitlines()),
                 "required_lines_present": all(token in prometheus for token in (
-                    "recsys_workers 2",
+                    f"recsys_workers {args.workers}",
                     "recsys_requests_total",
                     "recsys_event_loop_lag_ms",
                     "recsys_process_resident_memory_bytes",
@@ -200,6 +254,7 @@ def main() -> int:
                 )),
             },
             "feedback": feedback,
+            "feedback_before": feedback_before,
         })
         runtime = after_burst.get("runtime") or {}
         error_counts = (after_burst.get("requests") or {}).get(
@@ -217,13 +272,12 @@ def main() -> int:
                 burst["status_counts"].get("429", 0) > 0
                 and error_counts.get("rate_limited", 0) > 0),
             "aggregate_request_count_exact": (
-                after_burst.get("requests", {}).get("total")
-                == total_expected),
+                after_burst.get("routes", {}).get(path, {}).get("count", 0)
+                - before_count == total_expected),
             "every_worker_served_business_traffic": (
-                len(worker_snapshots) == args.workers
-                and all(
-                    snapshot.get("requests", {}).get("total", 0) > 0
-                    for snapshot in worker_snapshots)),
+                len(per_worker_totals) == args.workers
+                and all(value > per_worker_before.get(pid, 0)
+                        for pid, value in per_worker_totals.items())),
             "runtime_cpu_present": runtime.get("cpu_percent_sum") is not None,
             "runtime_rss_present": (runtime.get("rss_bytes_sum") or 0) > 0,
             "event_loop_lag_sampled": (
@@ -233,6 +287,7 @@ def main() -> int:
                 and report["prometheus"]["required_lines_present"]),
             "successful_recommendations_logged": (
                 feedback["recommendations"]
+                - feedback_before["recommendations"]
                 == paced["successes"] + burst["successes"]),
         }
     except Exception as exc:
@@ -244,14 +299,15 @@ def main() -> int:
         # The test harness deliberately force-kills the isolated process tree
         # so it cannot signal the parent terminal on Windows. Verify stale-file
         # crash recovery separately; graceful lifespan cleanup has a unit test.
-        time.sleep(1.1)
-        FileMetricsRegistry(
-            metrics_dir, stale_after_s=1).collect()
-        remaining = [path for path in metrics_dir.iterdir() if path.is_file()] \
-            if metrics_dir.exists() else []
-        report["checks"]["crash_registry_cleanup"] = not remaining
-        report["registry_files_after_shutdown"] = [
-            path.name for path in remaining]
+        if not external:
+            time.sleep(1.1)
+            FileMetricsRegistry(metrics_dir, stale_after_s=1).collect()
+            remaining = [entry for entry in metrics_dir.iterdir() if entry.is_file()] \
+                if metrics_dir.exists() else []
+            report["checks"]["crash_registry_cleanup"] = not remaining
+            report["registry_files_after_shutdown"] = [entry.name for entry in remaining]
+        else:
+            report["lifecycle_note"] = "External service left running; shutdown cleanup not tested."
         report["passed"] = (
             failure is None and all(report["checks"].values()))
         output.parent.mkdir(parents=True, exist_ok=True)

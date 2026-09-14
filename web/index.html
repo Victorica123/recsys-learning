@@ -3,104 +3,180 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RecSys Demo · 双塔召回 → DeepFM 精排</title>
+<link rel="icon" href="data:,">
+<title>内容推荐 · 从偏好到反馈</title>
 <style>
-  :root { --bg:#0f1115; --card:#171a21; --line:#2a2f3a; --text:#e6e8ee; --muted:#8b93a7; --accent:#4f8cff; }
-  * { box-sizing: border-box; }
+  :root { --bg:#0f1115; --card:#171a21; --line:#2a2f3a; --text:#e6e8ee; --muted:#a0a9bc; --accent:#4f8cff; }
+  * { box-sizing:border-box; }
   body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
-  header { padding:18px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-  h1 { font-size:17px; margin:0; }
-  .badge { font-size:12px; padding:3px 10px; border-radius:99px; border:1px solid var(--line); color:var(--muted); }
-  .badge.ok { color:#4cd07d; border-color:#2c7a47; }
-  .badge.err { color:#ff6b6b; border-color:#8a3a3a; }
-  main { max-width:760px; margin:0 auto; padding:24px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:16px; }
-  label { display:block; font-size:12px; color:var(--muted); margin:12px 0 4px; }
-  input, select { width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--line); background:#0b0d11; color:var(--text); font-size:14px; }
-  button { margin-top:16px; padding:10px 18px; border:none; border-radius:8px; background:var(--accent); color:#fff; font-size:14px; cursor:pointer; }
-  button:disabled { opacity:.5; cursor:not-allowed; }
-  .rec { display:flex; gap:14px; padding:12px 0; border-bottom:1px solid var(--line); align-items:baseline; }
-  .rank { color:var(--accent); font-weight:700; min-width:26px; }
-  .title { flex:1; }
-  .genres { font-size:12px; color:var(--muted); }
-  .score { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
-  .meta { font-size:12px; color:var(--muted); margin-top:10px; word-break:break-all; line-height:1.6; }
-  .error { color:#ff6b6b; font-size:13px; margin-top:10px; white-space:pre-wrap; }
-  .muted { color:var(--muted); font-size:13px; }
+  header { padding:20px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  h1 { font-size:19px; margin:0; }
+  .badge { font-size:12px; padding:4px 10px; border-radius:99px; border:1px solid var(--line); color:var(--muted); }
+  .badge.ok { color:#63d993; } .badge.err,.error { color:#ff9292; }
+  main { max-width:840px; margin:0 auto; padding:24px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; margin-bottom:16px; }
+  label { display:block; font-size:13px; color:var(--muted); margin:14px 0 6px; }
+  input,select { width:100%; padding:10px; border-radius:8px; border:1px solid var(--line); background:#0b0d11; color:var(--text); font-size:14px; }
+  button { padding:10px 16px; border:none; border-radius:8px; background:var(--accent); color:white; font-size:14px; cursor:pointer; }
+  button:disabled { opacity:.55; cursor:default; }
+  button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #9fc3ff; outline-offset:3px; }
+  .controls { display:flex; gap:12px; align-items:end; } .controls>div { flex:1; } .controls button { flex-shrink:0; min-height:40px; }
+  .rec { display:flex; gap:14px; padding:16px 0; border-bottom:1px solid var(--line); align-items:center; }
+  .rec:last-child { border-bottom:0; }
+  .rank { color:#91b7ff; font-weight:700; min-width:24px; }
+  .title { flex:1; line-height:1.5; min-width:0; overflow-wrap:anywhere; } .genres { font-size:12px; color:var(--muted); margin-top:4px; }
+  .rec button { background:#263954; color:#d4e4ff; white-space:nowrap; font-size:13px; }
+  p,.muted { color:var(--muted); font-size:13px; line-height:1.7; }
+  p { margin:0 0 12px; } .error { font-size:13px; line-height:1.6; white-space:pre-wrap; }
+  #progress { margin:12px 0 0; } details { margin-top:16px; } summary { cursor:pointer; color:var(--muted); font-size:13px; }
+  pre { white-space:pre-wrap; word-break:break-word; color:var(--muted); font-size:12px; line-height:1.7; }
+  @media(max-width:520px) { main { padding:16px; } .card { padding:16px; } .rec { gap:9px; } .rec button { padding:8px; } }
 </style>
 </head>
 <body>
-<header>
-  <h1>RecSys Demo</h1>
-  <span class="badge" id="health">health: …</span>
-  <span class="badge">双塔召回 50 → DeepFM 精排 Top-K</span>
-</header>
+<header><h1>内容推荐</h1><span class="badge">MovieLens 电影演示</span><span class="badge" id="health">检查服务中</span></header>
 <main>
-  <div class="card">
-    <label for="apiKey">API Key（服务器未启用鉴权时留空）</label>
-    <input id="apiKey" type="password" placeholder="X-API-Key" autocomplete="off">
-    <label for="user">用户 user_id</label>
-    <select id="user"></select>
-    <label for="k">推荐条数 k</label>
-    <input id="k" type="number" value="10" min="1" max="100">
-    <button id="go" onclick="recommend()">生成推荐</button>
-    <div class="meta" id="meta"></div>
-    <div class="error" id="err"></div>
-  </div>
-  <div class="card" id="results">
-    <div class="muted">选择用户后点击「生成推荐」。</div>
-  </div>
+  <section class="card" aria-label="推荐设置">
+    <p>选择一个用户，看看系统推荐什么。对感兴趣的电影点一下，记录你的选择。</p>
+    <div class="controls">
+      <div><label for="user">选择用户</label><select id="user" aria-label="选择用户"></select></div>
+      <button id="go" disabled>生成推荐</button>
+    </div>
+    <details>
+      <summary>调整数量与连接设置</summary>
+      <label for="k">推荐数量</label><input id="k" type="number" value="5" min="1" max="100">
+      <label for="apiKey">访问密钥（服务要求时填写）</label>
+      <input id="apiKey" type="password" autocomplete="off" placeholder="未启用鉴权时留空">
+    </details>
+    <p id="progress" role="status">准备好后，点击「生成推荐」。</p>
+    <div id="err" class="error" role="alert"></div>
+  </section>
+  <section class="card" id="results" aria-label="推荐结果"><div class="muted">推荐结果将显示在这里。</div></section>
+  <details><summary>查看本次推荐详情</summary><pre id="meta">生成推荐后，可在这里查看批次和模型信息。</pre></details>
 </main>
 <script>
-const API_KEY = () => document.getElementById('apiKey').value.trim();
-const headers = () => { const h = {'Content-Type':'application/json'}; const k = API_KEY(); if (k) h['X-API-Key'] = k; return h; };
-
-async function api(path, opts) {
-  const res = await fetch(path, Object.assign({headers: headers()}, opts));
-  if (res.status === 401) throw new Error('401：需要正确的 X-API-Key（服务器已启用鉴权）');
-  if (res.status === 429) throw new Error('429：服务过载/限流，请稍后重试');
-  if (res.status === 503) throw new Error('503：模型未就绪');
-  if (!res.ok) throw new Error(res.status + '：' + (await res.text()).slice(0, 200));
-  return res.json();
+const el = id => document.getElementById(id);
+const actorId = 'web-' + crypto.randomUUID();
+let active = null;
+let observer = null;
+function headers() {
+  const result = {'Content-Type':'application/json', 'X-Actor-ID':actorId};
+  const key = el('apiKey').value.trim();
+  if (key) result['X-API-Key'] = key;
+  return result;
 }
-
-async function loadHealth() {
-  try { const h = await api('/health'); const el = document.getElementById('health');
-    el.textContent = 'health: ' + h.status; el.className = 'badge ' + (h.status === 'ok' ? 'ok' : 'err');
-  } catch (e) { const el = document.getElementById('health'); el.textContent = 'health: unreachable'; el.className = 'badge err'; }
-}
-
-async function loadUsers() {
-  try { const u = await api('/users?limit=60'); const sel = document.getElementById('user');
-    sel.innerHTML = u.users.map(id => `<option value="${id}">${id}</option>`).join('');
-  } catch (e) { document.getElementById('err').textContent = e.message; }
-}
-
-async function recommend() {
-  const err = document.getElementById('err'); err.textContent = '';
-  const uid = document.getElementById('user').value;
-  const k = document.getElementById('k').value;
-  const results = document.getElementById('results');
+async function api(path, payload) {
+  let response;
   try {
-    const r = await api(`/recommend?user_id=${uid}&k=${k}`);
-    document.getElementById('meta').innerHTML =
-      `recommendation_id: <b>${r.recommendation_id}</b><br>` +
-      `model: ${r.model_version} · policy: ${r.policy_name} · 候选 ${r.n_candidates}`;
-    const items = r.recommendations;
-    if (!items.length) { results.innerHTML = '<div class="muted">该用户无可用推荐。</div>'; return; }
-    results.innerHTML = items.map(it => `
-      <div class="rec">
-        <div class="rank">${it.rank}</div>
-        <div class="title">${escapeHtml(it.title)}<div class="genres">${escapeHtml(it.genres)}</div></div>
-        <div class="score">${it.score.toFixed(4)}</div>
-      </div>`).join('');
-  } catch (e) { err.textContent = e.message; }
+    response = await fetch(path, {method:payload === undefined ? 'GET' : 'POST',
+      headers:headers(), body:payload === undefined ? undefined : JSON.stringify(payload)});
+  } catch (_) { throw new Error('连接中断，请稍后重试。'); }
+  if (response.status === 401) throw new Error('服务需要访问密钥，请在连接设置中填写后重试。');
+  if (response.status === 429) throw new Error('请求较多，请稍后重试。');
+  if (response.status === 503) throw new Error('推荐服务暂未就绪，请稍后重试。');
+  if (!response.ok) throw new Error('请求失败（' + response.status + '），请检查选择后重试。');
+  return response.json();
 }
-
-function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
+async function loadHealth() {
+  try {
+    const state = await api('/ready');
+    el('health').textContent = state.status === 'ready' ? '服务已就绪' : '服务准备中';
+    el('health').className = 'badge ' + (state.status === 'ready' ? 'ok' : '');
+  } catch (_) { el('health').textContent = '服务暂未就绪'; el('health').className = 'badge err'; }
+}
+async function loadUsers() {
+  try {
+    const data = await api('/users?limit=60');
+    el('user').replaceChildren(...data.users.map(id => new Option('用户 ' + id, id)));
+    if (data.users.includes(1)) el('user').value = '1';
+    el('go').disabled = !data.users.length;
+    el('err').textContent = data.users.length ? '' : '没有可用用户，请检查数据集。';
+  } catch (error) { el('err').textContent = error.message; el('go').disabled = true; }
+}
+function progress(context) {
+  if (active === context) el('progress').textContent =
+    '已展示 ' + context.shown.size + ' / ' + context.items.length + ' 条 · 已记录 ' + context.clicked.size + ' 次选择';
+}
+function ensureShown(context, movieId) {
+  if (context.shown.has(movieId)) return Promise.resolve();
+  if (context.pending.has(movieId)) return context.pending.get(movieId);
+  const pending = api('/v1/events/impression', {recommendation_id:context.id, movie_ids:[movieId]})
+    .then(() => { context.shown.add(movieId); progress(context); })
+    .finally(() => context.pending.delete(movieId));
+  context.pending.set(movieId, pending);
+  return pending;
+}
+async function choose(context, item, button) {
+  if (active !== context) return;
+  button.disabled = true;
+  el('err').textContent = '';
+  if (!button.feedbackEvent) button.feedbackEvent = {
+    recommendation_id:context.id, movie_id:item.movie_id, event_type:'click',
+    event_id:crypto.randomUUID(), occurred_at:new Date().toISOString()
+  };
+  try {
+    await ensureShown(context, item.movie_id);
+    await api('/v1/events/feedback', button.feedbackEvent);
+    context.clicked.add(item.movie_id);
+    button.textContent = '已记录';
+    progress(context);
+  } catch (error) {
+    button.disabled = false; button.textContent = '重试反馈';
+    if (active === context) el('err').textContent = error.message;
+  }
+}
+async function recommend() {
+  const userId = Number(el('user').value), k = Number(el('k').value);
+  if (!Number.isInteger(userId) || userId < 1 || !Number.isInteger(k) || k < 1 || k > 100) {
+    el('err').textContent = '请选择用户，推荐数量填写 1 到 100 的整数。'; return;
+  }
+  el('go').disabled = true; el('err').textContent = '';
+  if (observer) observer.disconnect();
+  active = null;
+  el('results').textContent = '正在生成推荐…';
+  el('progress').textContent = '正在查找相关内容…';
+  try {
+    const slate = await api('/v1/recommendations', {user_id:userId, k});
+    el('meta').textContent = JSON.stringify({批次:slate.recommendation_id,
+      推荐策略:slate.ranking_policy, 模型版本:slate.model_version, 请求:slate.request_id}, null, 2);
+    el('results').replaceChildren();
+    if (!slate.recommendations.length) {
+      el('results').textContent = '这个用户暂时没有可推荐的内容。';
+      el('progress').textContent = '可以换一个用户再试。'; return;
+    }
+    const context = {id:slate.recommendation_id, items:slate.recommendations,
+      shown:new Set(), clicked:new Set(), pending:new Map()};
+    active = context;
+    observer = new IntersectionObserver(entries => {
+      if (active !== context) return;
+      for (const entry of entries) if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+        observer.unobserve(entry.target);
+        ensureShown(context, Number(entry.target.dataset.movieId)).catch(() => {
+          if (active === context) el('err').textContent = '部分展示记录暂未保存，提交反馈时会重试。';
+        });
+      }
+    }, {threshold:0.5});
+    for (const item of context.items) {
+      const row = document.createElement('div'); row.className = 'rec'; row.dataset.movieId = item.movie_id;
+      const rank = document.createElement('div'); rank.className = 'rank'; rank.textContent = item.rank;
+      const title = document.createElement('div'); title.className = 'title'; title.textContent = item.title;
+      const genres = document.createElement('div'); genres.className = 'genres'; genres.textContent = (item.genres || '').split('|').join(' · ');
+      title.append(genres);
+      const button = document.createElement('button'); button.textContent = '感兴趣';
+      button.addEventListener('click', () => choose(context, item, button));
+      row.append(rank, title, button); el('results').append(row); observer.observe(row);
+    }
+    progress(context);
+  } catch (error) {
+    el('err').textContent = error.message;
+    el('results').textContent = '本次推荐未完成，可以重试。';
+    el('progress').textContent = '等待重新生成推荐。';
+  } finally { el('go').disabled = false; }
+}
+el('go').addEventListener('click', recommend);
+el('apiKey').addEventListener('change', loadUsers);
 loadHealth(); loadUsers();
-setInterval(loadHealth, 5000);
+setInterval(loadHealth, 10000);
 </script>
 </body>
 </html>

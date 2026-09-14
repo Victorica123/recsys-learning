@@ -6,7 +6,7 @@
 
 | 项目部分 | 重点八股 | 典型追问 |
 |---|---|---|
-| 页面与 API | HTTP/JSON、参数校验、加载与错误状态、前后端职责 | 页面和 API 为什么要共用推荐核心？ |
+| 页面与 API | HTTP/JSON、POST 语义、参数校验、OpenAPI、加载与错误状态 | 推荐、曝光与点击怎样对应起来？ |
 | 向量推荐 | Embedding、双塔、内积/余弦、Top-K、候选过滤 | 用户和电影怎样匹配，怎样避免重复推荐已评分内容？ |
 | 曝光与反馈 | 事务、主键/唯一约束、索引、幂等 | 同一条反馈重试两次，怎样只产生一次效果？ |
 | 服务性能 | 同步/异步、线程池、多进程、p95/p99 | 为什么阻塞操作要移出事件循环？增加 worker 有什么成本？ |
@@ -16,11 +16,12 @@
 <details>
 <summary>页面与 API：准备到能画出调用关系</summary>
 
-`app.py` 负责 Streamlit 展示，`serve.py` 提供 HTTP 接口，都调用同一个 `Recommender`。
-当前页面直接调用 Python 核心；独立前端可以通过 HTTP 接口接入。
+`web/index.html` 负责交互，通过 `POST /v1/recommendations` 调用 `serve.py` 和 `Recommender`。
+推荐会写入批次，所以主接口使用 POST。参数不合法返回 400，未知用户返回 404，模型或数据库暂不可用返回 503。
+原 `app.py` 是直接调用 Python 核心的 Streamlit 展示，两种入口共享推理实现。
 重点理解输入输出、加载中/无结果/失败状态，以及为什么不在多个入口复制推理逻辑。
 
-代码：[app.py](../app.py)、[serve.py](../serve.py)、[src/serving.py](../src/serving.py)。
+代码：[web/index.html](../web/index.html)、[serve.py](../serve.py)、[API 契约](../src/api_contract.py)。
 
 </details>
 
@@ -42,6 +43,7 @@ Embedding 是用户或内容的数字表示。双塔分别计算两类向量，�
 一次推荐、实际曝光和用户反馈要能对应起来，模型与策略版本也要保留。
 事务保证关联写入的一致性；幂等让成功后的重试不重复产生效果。
 本项目使用 SQLite/WAL、事件编号和数据库约束，重复且内容相同的反馈可安全重试，冲突内容会被拒绝。
+实际演示可用 `scripts/demo_recommendation_flow.py`：曝光和点击各重复提交一次，最终仍只有 5 条曝光、1 条反馈。
 
 先理解 ACID、主键、唯一约束和索引。MySQL 隔离级别可以继续复习，但不要混淆不同数据库的具体实现。
 代码：[feedback.py](../src/feedback.py)，协议见 [反馈说明](FEEDBACK_LOOP.md)。
@@ -77,7 +79,7 @@ MovieLens 的评分预测不是广告 CTR；引用数字时带上数据集与切
 ## 第二轮：按岗位或简历内容展开
 
 - **推荐建模**：双塔训练、负采样、FM/DeepFM 特征交叉、AUC/GAUC，再看 SASRec 序列兴趣。
-- **应用工程**：鉴权、部署、请求追踪、压力测试，以及把 HTTP API 接到独立前端。
+- **应用工程**：鉴权、Docker/Compose、只读模型挂载、持久数据卷、请求追踪与压力测试。
 - **强化学习专项**：状态、动作、奖励、探索与利用，以及为什么学习策略可能输给规则。
 
 大模型、RAG 和流式生成可以结合其他 AI 应用经历准备，本项目的默认讲述以内容推荐链路为主。

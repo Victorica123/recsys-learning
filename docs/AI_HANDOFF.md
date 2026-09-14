@@ -14,7 +14,58 @@ Codex is taking over the implementation and research work previously produced by
 
 ## Likely Next Tasks
 
-### Current handoff: cross-device GitHub snapshot (2026-09-14)
+### Current handoff: web review and application delivery complete (2026-09-14)
+
+- Latest request: review the web ChatGPT advice and continue improving the
+  video/content recommendation application. Keep explanations concise for
+  AI full-stack interviews; preserve the optional enterprise seed and all
+  existing model/experiment artifacts. No retraining or new model is needed.
+- Advice source: ChatGPT task 评审改进路线 and GitHub PR #1. PR commit
+  `ad0d4ed` was fast-forwarded into local `main` from `c01fbc8`; this snapshot
+  contains the subsequent implementation and verification. Use Git history
+  for its final commit. GitHub remote CI was not independently verified here.
+- Implemented: strict v1 request validation and complete OpenAPI,
+  stable feedback event IDs, a browser recommendation/exposure/click flow,
+  a repeatable demo script, POST/auth-aware load testing, and external-container
+  support in the production smoke script. Defaults remain two-tower retrieval.
+- Verification: `.venv/Scripts/python.exe scripts/ai_startup_harness.py`
+  `--check`, `--test`, and `--release` PASS (existing opt-in integrations stay
+  skipped). CI-equivalent Ruff E9/F821 and `docker compose config --quiet`
+  PASS. Full test log: `runtime/container-review-20260914-v1/unit-tests-final.log`.
+  Updated Markdown links, code fences/details and `git diff --check` also PASS.
+- CPU image built and checked with non-root UID 999, Python 3.12.14 and
+  Torch 2.9.1+cpu. Data/checkpoints are read-only, SQLite/metrics use a named
+  runtime volume; container recreation preserved all recorded rows. An
+  interrupted official faiss download and Docker metadata connection errors
+  were resolved without bypassing hash checks. Base image now has a pinned
+  digest; transitive container pip dependencies are not yet fully lock-frozen.
+- Docker Desktop remains running. Isolated Compose project
+  `recsys-review-20260914`, container `recsys-review-20260914-api-1`, local port
+  8860. Final service uses defaults: two workers, gate 8, rate 80, burst 8.
+  Stop only this test service with `docker compose -p recsys-review-20260914 stop`
+  if no longer needed; preserve its named volume and original local databases.
+- Actual demo and external production smoke passed with tag
+  `container-review-20260914-v2`. Default/capacity POST c1/c16 reports use tags
+  `container-{default|capacity}-c{1|16}-20260914-v2`; earlier runs are retained.
+  Capacity checks use gate 32/rate 0 and must not be presented as default
+  deployment performance. Report success latency separately from 429s.
+- Edge/Playwright verified visible exposure, narrow-screen layout and the
+  lost-response case: the server committed a click, browser response was
+  aborted, then an identical retry returned duplicate=true and left one row.
+  All browser/script events in this test volume are QA data, not human lift.
+- Portable evidence: `artifacts/application_delivery_reference.json` embeds
+  results, runtime/source hashes, and the existing retrieval-vs-DeepFM negative
+  comparison. `docs/APPLICATION_DELIVERY.md` explains it. README, onboarding,
+  interview/study maps, production guide, AGENTS and startup routes are aligned.
+- The requested implementation is complete. Sync destination remains
+  `origin/main` at `https://github.com/Victorica123/recsys-learning.git` under
+  the user's cross-device authorization. Data, model weights, runtime stores
+  and raw local reports remain ignored; device setup follows MOVIELENS_GUIDE.
+- Actual workspace: `D:\Vibe Coding\machine  learning\recsys-learning`.
+  Older paths in the external maintainer skill are stale. Recheck `git status`
+  and `git log` before treating historical uncommitted-state notes below as current.
+
+### Completed: cross-device GitHub snapshot (2026-09-14)
 
 - User requested committing and pushing the current project changes for use
   on other devices. Destination: `origin/main` at

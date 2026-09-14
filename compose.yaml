@@ -2,11 +2,27 @@ services:
   api:
     build: .
     ports:
-      - "8000:8000"
+      - "127.0.0.1:${RECSYS_PORT:-8000}:8000"
     environment:
       RECSYS_API_KEY: ${RECSYS_API_KEY:-}
       RECSYS_MODEL_VERSION: ${RECSYS_MODEL_VERSION:-two-tower-retrieval-ml1m-v2}
       RECSYS_VERIFY_CHECKPOINTS: ${RECSYS_VERIFY_CHECKPOINTS:-1}
+    command:
+      - python
+      - serve.py
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --preload
+      - --workers
+      - "${RECSYS_WORKERS:-2}"
+      - --max-in-flight
+      - "${RECSYS_MAX_IN_FLIGHT:-8}"
+      - --rate-limit
+      - "${RECSYS_RATE_LIMIT:-80}"
+      - --rate-burst
+      - "${RECSYS_RATE_BURST:-8}"
     volumes:
       - ./data:/app/data:ro
       - ./checkpoints:/app/checkpoints:ro
