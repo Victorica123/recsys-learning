@@ -15,6 +15,13 @@
 
 当前默认采用双塔直接推荐；DeepFM 精排、序列模型和强化学习保留为研究与对照材料。
 
+## 后端服务
+
+准备好本地 `data/` 与 `checkpoints/` 后，可用 `docker compose up --build -d`
+启动两 worker API。`POST /v1/recommendations` 返回推荐并登记候选上下文，随后通过
+曝光与反馈事件接口形成可追溯闭环；`/openapi.json`、`/ready` 和 Prometheus 指标
+分别用于合约、发布探针和运行监控。细节见[生产运行手册](docs/PRODUCTION_SERVING.md)。
+
 ## 先跑 Demo
 
 进入 `recsys-learning` 仓库根目录，在已有项目环境中执行：

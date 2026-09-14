@@ -31,6 +31,7 @@ _KNOWN_ROUTES = {
     "/health", "/live", "/ready", "/metrics", "/metrics/aggregate",
     "/metrics/prometheus", "/recommend", "/users", "/users/{uid}",
     "/events/impression", "/events/feedback", "/events/stats",
+    "/v1/recommendations", "/v1/events/impression", "/v1/events/feedback",
 }
 
 

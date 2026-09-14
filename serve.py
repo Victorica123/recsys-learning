@@ -57,6 +57,7 @@ from metrics_registry import (FileMetricsRegistry,  # noqa: E402
                               render_prometheus)
 from feedback import (FeedbackStore, FeedbackValidationError,  # noqa: E402
                       select_slate)
+from api_contract import openapi_document  # noqa: E402
 
 # 每个 worker 最多同时处理的在途请求数（超出即 429 卸载）。多 worker 通过
 # 重新 import 本模块拿到进程级配置，所以从环境变量读取，CLI 只是代设环境变量。
@@ -271,6 +272,30 @@ async def recommend(request: Request):
         return _json({"error": "k must be a positive integer"}, 400)
     if k > 100:
         return _json({"error": "k cannot exceed 100"}, 400)
+    return await _serve_recommendation(request, uid, k)
+
+
+async def create_recommendation(request: Request):
+    """Versioned command endpoint; unlike the legacy GET it admits the write."""
+    payload, invalid = await _json_body(request)
+    if invalid is not None:
+        return invalid
+    if "user_id" not in payload:
+        return _json({"error": "missing fields: user_id"}, 400)
+    try:
+        uid = int(payload["user_id"])
+        k = int(payload.get("k", 10))
+    except (TypeError, ValueError):
+        return _json({"error": "user_id and k must be integers"}, 400)
+    if k <= 0:
+        return _json({"error": "k must be a positive integer"}, 400)
+    if k > 100:
+        return _json({"error": "k cannot exceed 100"}, 400)
+    return await _serve_recommendation(request, uid, k)
+
+
+async def _serve_recommendation(request: Request, uid: int, k: int):
+    """Compute a slate and atomically register its candidate-level context."""
     rec, unavailable = await _recommender_or_503()
     if unavailable is not None:
         return unavailable
@@ -463,9 +488,14 @@ async def index(request: Request):
     return FileResponse(str(ROOT / "web" / "index.html"))
 
 
+async def openapi(request: Request):
+    """Serve a stable contract without loading model artifacts."""
+    return _json(openapi_document())
+
+
 _API_KEY_EXEMPT = frozenset({
     "/", "/health", "/live", "/ready",
-    "/metrics", "/metrics/aggregate", "/metrics/prometheus",
+    "/metrics", "/metrics/aggregate", "/metrics/prometheus", "/openapi.json",
 })
 
 
@@ -511,6 +541,7 @@ class ApiKeyMiddleware:
 
 _starlette_app = Starlette(routes=[
     Route("/", index),
+    Route("/openapi.json", openapi),
     Route("/health", health),
     Route("/live", live),
     Route("/ready", ready),
@@ -520,8 +551,11 @@ _starlette_app = Starlette(routes=[
     Route("/users", list_users),
     Route("/users/{uid}", get_user),
     Route("/recommend", recommend),
+    Route("/v1/recommendations", create_recommendation, methods=["POST"]),
     Route("/events/impression", record_impression, methods=["POST"]),
+    Route("/v1/events/impression", record_impression, methods=["POST"]),
     Route("/events/feedback", record_feedback, methods=["POST"]),
+    Route("/v1/events/feedback", record_feedback, methods=["POST"]),
     Route("/events/stats", feedback_stats),
 ], lifespan=_lifespan)
 

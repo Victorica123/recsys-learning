@@ -1,5 +1,34 @@
 # 推荐 API 生产运行手册
 
+## 容器化启动（推荐给面试演示）
+
+先按 `docs/MOVIELENS_GUIDE.md` 准备宿主机上的 `data/` 与 `checkpoints/`，然后：
+
+```bash
+docker compose up --build -d
+curl http://localhost:8000/ready
+curl http://localhost:8000/openapi.json
+```
+
+镜像不内置数据集和权重；Compose 以只读卷挂载二者，并把 SQLite 反馈库和
+worker 指标放入持久卷。新客户端使用 `POST /v1/recommendations`、
+`/v1/events/impression` 和 `/v1/events/feedback`；旧路径继续兼容。
+`/openapi.json` 可在模型未加载时读取，因此部署流水线可以独立校验接口合约。
+
+提交前至少运行单元测试与 `docker compose config --quiet`。具备真实权重的发布环境
+再运行 `scripts/production_smoke.py --tag <unique-tag>`，并用
+`scripts/load_test_api.py` 记录目标机器上的 p95/p99、成功 RPS、429 分类与 RSS；
+历史本机数字只能作为基线，不能冒充部署环境 SLO。
+
+```bash
+curl -X POST http://localhost:8000/v1/recommendations \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":1,"k":10}'
+```
+
+推荐请求会生成并持久化 `recommendation_id` 后才返回，因此正式接口采用有副作用
+语义清晰的 POST。旧 `GET /recommend` 仅为已有 Demo 兼容保留。
+
 ## 推荐启动配置
 
 以下参数来自本机（Windows、12 逻辑核、ML-1M）真实压测，适合作为起点，

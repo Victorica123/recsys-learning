@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+__pycache__
+*.py[cod]
+data
+checkpoints
+experiments
+figures
+runtime
+research
+research_v2
+research_v3
+notes
+docs
+tests

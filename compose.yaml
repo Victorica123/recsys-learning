@@ -1,0 +1,18 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      RECSYS_API_KEY: ${RECSYS_API_KEY:-}
+      RECSYS_MODEL_VERSION: ${RECSYS_MODEL_VERSION:-two-tower-retrieval-ml1m-v2}
+      RECSYS_VERIFY_CHECKPOINTS: ${RECSYS_VERIFY_CHECKPOINTS:-1}
+    volumes:
+      - ./data:/app/data:ro
+      - ./checkpoints:/app/checkpoints:ro
+      - recsys-runtime:/app/runtime
+    init: true
+    restart: unless-stopped
+
+volumes:
+  recsys-runtime:

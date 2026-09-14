@@ -35,3 +35,6 @@ jobs:
         # `-t .` 让 tests 作为包导入，从而触发 tests/__init__.py 把 src/ 加入
         # sys.path；缺它会漏掉 research_v2 等包的测试并报 import 错误。
         run: python -m unittest discover -t . -s tests -v
+
+      - name: Validate container definition
+        run: docker compose config --quiet
